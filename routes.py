@@ -35,10 +35,28 @@ def login():
         return redirect(url_for('index'))
     
     form = LoginForm()
+    
+    app.logger.info(f"Login attempt - Method: {request.method}")
+    if request.method == 'POST':
+        app.logger.info(f"Form data: {request.form}")
+        app.logger.info(f"Form validation: {form.validate()}")
+        if not form.validate():
+            app.logger.info(f"Form errors: {form.errors}")
+    
     if form.validate_on_submit():
+        app.logger.info(f"Attempting login with email: {form.email.data}")
         user = User.query.filter_by(email=form.email.data).first()
         
-        if user is None or not user.check_password(form.password.data):
+        if user is None:
+            app.logger.info(f"No user found with email: {form.email.data}")
+            flash('Invalid email or password', 'danger')
+            return render_template('auth/login.html', title='Sign In', form=form)
+        
+        app.logger.info(f"User found: {user.username}, checking password...")
+        password_check = user.check_password(form.password.data)
+        app.logger.info(f"Password check result: {password_check}")
+        
+        if not password_check:
             flash('Invalid email or password', 'danger')
             return render_template('auth/login.html', title='Sign In', form=form)
         
@@ -54,6 +72,7 @@ def login():
             return redirect(url_for('two_factor_auth'))
         
         # If 2FA is not enabled, log the user in directly
+        app.logger.info(f"Login successful, logging in user: {user.username}")
         login_user(user, remember=form.remember_me.data)
         
         next_page = request.args.get('next')
