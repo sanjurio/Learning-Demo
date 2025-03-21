@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     // Handle 2FA token input field
-    const tokenInput = document.getElementById('token');
+    const tokenInput = document.querySelector('.token-input');
     if (tokenInput) {
         // Focus the token input field
         tokenInput.focus();
@@ -89,24 +89,51 @@ document.addEventListener('DOMContentLoaded', function() {
         copyButton.addEventListener('click', function(e) {
             e.preventDefault();
             
-            // Create a temporary input element
-            const tempInput = document.createElement('input');
-            tempInput.value = secretKeyElement.textContent;
-            document.body.appendChild(tempInput);
-            
-            // Select and copy the text
-            tempInput.select();
-            document.execCommand('copy');
-            
-            // Remove the temporary element
-            document.body.removeChild(tempInput);
-            
-            // Update button text temporarily
-            const originalText = this.textContent;
-            this.textContent = 'Copied!';
-            setTimeout(() => {
-                this.textContent = originalText;
-            }, 2000);
+            // Use the modern Clipboard API when available
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(secretKeyElement.textContent.trim())
+                    .then(() => {
+                        // Update button text temporarily
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        this.classList.add('btn-success');
+                        this.classList.remove('btn-outline-secondary');
+                        
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                            this.classList.remove('btn-success');
+                            this.classList.add('btn-outline-secondary');
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        alert('Failed to copy to clipboard');
+                    });
+            } else {
+                // Fallback for older browsers
+                const tempInput = document.createElement('input');
+                tempInput.value = secretKeyElement.textContent.trim();
+                document.body.appendChild(tempInput);
+                
+                // Select and copy the text
+                tempInput.select();
+                document.execCommand('copy');
+                
+                // Remove the temporary element
+                document.body.removeChild(tempInput);
+                
+                // Update button text temporarily
+                const originalText = this.textContent;
+                this.textContent = 'Copied!';
+                this.classList.add('btn-success');
+                this.classList.remove('btn-outline-secondary');
+                
+                setTimeout(() => {
+                    this.textContent = originalText;
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-outline-secondary');
+                }, 2000);
+            }
         });
     }
     

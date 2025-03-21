@@ -5,70 +5,82 @@
 {% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-header">
-        <h1 class="auth-title">Two-Factor Authentication</h1>
-        {% if setup %}
-        <p class="auth-subtitle">Set up 2FA to enhance your account security</p>
-        {% else %}
-        <p class="auth-subtitle">Enter the 6-digit code from your authenticator app</p>
-        {% endif %}
-    </div>
-    
-    {% if setup %}
-    <div class="auth-2fa-container">
-        <p>Scan the QR code below with your authenticator app (like Microsoft Authenticator, Google Authenticator, or Authy):</p>
-        
-        <div class="auth-2fa-qr">
-            <img src="{{ qr_code }}" alt="QR Code for 2FA setup">
-        </div>
-        
-        <p>Or manually enter this code in your app:</p>
-        <div class="auth-2fa-code" id="secret-key">{{ session.otp_secret }}</div>
-        <button id="copy-secret" class="btn btn-outline">Copy Code</button>
-        
-        <div class="auth-2fa-steps">
-            <h3>Setup Instructions:</h3>
-            <ol>
-                <li>Install an authenticator app on your device (Microsoft Authenticator, Google Authenticator, Authy, etc.)</li>
-                <li>Scan the QR code or manually enter the secret key</li>
-                <li>Once added, enter the 6-digit code shown in your app below</li>
-            </ol>
-        </div>
-    </div>
-    {% endif %}
-    
-    <form id="two-factor-form" class="auth-form" method="post" action="{{ request.path }}">
-        {{ form.hidden_tag() }}
-        
-        <div class="form-group">
-            {{ form.token.label(class="form-label") }}
-            {{ form.token(class="form-control token-input", placeholder="Enter 6-digit code", autocomplete="off", inputmode="numeric", pattern="[0-9]*") }}
-            <div id="token-error" class="error-message">
-                {% for error in form.token.errors %}
-                    {{ error }}
-                {% endfor %}
-            </div>
-            
-            {% if not setup %}
-            <div class="text-center mt-2">
-                <small>Code refreshes in <span id="token-timer">30</span> seconds</small>
-                <div class="progress mt-1" style="height: 4px;">
-                    <div id="token-progress" class="progress-bar" style="width: 100%;"></div>
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <h2 class="card-title">Two-Factor Authentication</h2>
+                    {% if setup %}
+                    <p class="text-muted">Set up 2FA to enhance your account security</p>
+                    {% else %}
+                    <p class="text-muted">Enter the 6-digit code from your authenticator app</p>
+                    {% endif %}
                 </div>
+                
+                {% if setup %}
+                <div class="mb-4">
+                    <p>Scan the QR code below with your authenticator app (like Microsoft Authenticator, Google Authenticator, or Authy):</p>
+                    
+                    <div class="text-center my-3">
+                        <img src="{{ qr_code }}" alt="QR Code for 2FA setup" class="img-fluid" style="max-width: 200px;">
+                    </div>
+                    
+                    <p>Or manually enter this code in your app:</p>
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="border px-3 py-2 rounded bg-dark me-2" id="secret-key">{{ session.otp_secret }}</div>
+                        <button id="copy-secret" class="btn btn-outline-secondary btn-sm">Copy Code</button>
+                    </div>
+                    
+                    <div class="card mt-3 mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Setup Instructions:</h5>
+                        </div>
+                        <div class="card-body">
+                            <ol>
+                                <li>Install an authenticator app on your device (Microsoft Authenticator, Google Authenticator, Authy, etc.)</li>
+                                <li>Scan the QR code or manually enter the secret key</li>
+                                <li>Once added, enter the 6-digit code shown in your app below</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <form id="two-factor-form" method="post" action="{{ request.path }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.token.label(class="form-label") }}
+                        {{ form.token(class="form-control token-input text-center", placeholder="Enter 6-digit code", autocomplete="off", inputmode="numeric", pattern="[0-9]*") }}
+                        <div class="form-text text-danger">
+                            {% for error in form.token.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        
+                        {% if not setup %}
+                        <div class="text-center mt-2">
+                            <small class="text-muted">Code refreshes in <span id="token-timer">30</span> seconds</small>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div id="token-progress" class="progress-bar bg-info" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 mb-3">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                    
+                    {% if not setup %}
+                    <div class="alert alert-info">
+                        <small>Lost your device? Please contact an administrator for assistance.</small>
+                    </div>
+                    {% endif %}
+                </form>
             </div>
-            {% endif %}
         </div>
-        
-        <div class="form-group">
-            {{ form.submit(class="btn btn-primary btn-block") }}
-        </div>
-    </form>
-    
-    <div class="auth-footer">
-        {% if not setup %}
-        <p>Lost your device? Please contact an administrator for assistance.</p>
-        {% endif %}
     </div>
 </div>
 {% endblock %}
