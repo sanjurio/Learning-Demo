@@ -21,28 +21,28 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Validate email
             const emailInput = document.getElementById('email');
-            const emailError = document.getElementById('email-error');
+            const emailErrorContainer = emailInput?.closest('.mb-3')?.querySelector('.form-text.text-danger');
             
             if (emailInput && !emailRegex.test(emailInput.value.trim())) {
-                if (emailError) emailError.textContent = 'Please enter a valid email address';
+                if (emailErrorContainer) emailErrorContainer.textContent = 'Please enter a valid email address';
                 emailInput.classList.add('is-invalid');
                 isValid = false;
             } else if (emailInput) {
                 emailInput.classList.remove('is-invalid');
-                if (emailError) emailError.textContent = '';
+                if (emailErrorContainer) emailErrorContainer.textContent = '';
             }
             
             // Validate password (just check if not empty for login)
             const passwordInput = document.getElementById('password');
-            const passwordError = document.getElementById('password-error');
+            const passwordErrorContainer = passwordInput?.closest('.mb-3')?.querySelector('.form-text.text-danger');
             
             if (passwordInput && passwordInput.value.trim() === '') {
-                if (passwordError) passwordError.textContent = 'Password is required';
+                if (passwordErrorContainer) passwordErrorContainer.textContent = 'Password is required';
                 passwordInput.classList.add('is-invalid');
                 isValid = false;
             } else if (passwordInput) {
                 passwordInput.classList.remove('is-invalid');
-                if (passwordError) passwordError.textContent = '';
+                if (passwordErrorContainer) passwordErrorContainer.textContent = '';
             }
             
             if (!isValid) {
@@ -81,25 +81,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (passwordPatterns.length.test(password)) strength += 1;
                 else feedback.push('minimum length of 8 characters');
                 
-                // Update the strength meter
-                const meterDiv = strengthMeter.querySelector('div');
-                if (meterDiv) {
-                    meterDiv.className = '';
-                    
+                // Update the strength meter - now using a progress-bar element
+                if (strengthMeter) {
                     if (password === '') {
-                        meterDiv.style.width = '0';
+                        strengthMeter.style.width = '0';
+                        strengthMeter.className = 'progress-bar';
                         strengthText.textContent = '';
                     } else if (strength < 2) {
-                        meterDiv.classList.add('strength-weak');
+                        strengthMeter.style.width = '25%';
+                        strengthMeter.className = 'progress-bar bg-danger';
                         strengthText.textContent = 'Weak password';
                     } else if (strength < 4) {
-                        meterDiv.classList.add('strength-medium');
+                        strengthMeter.style.width = '50%';
+                        strengthMeter.className = 'progress-bar bg-warning';
                         strengthText.textContent = 'Medium strength password';
                     } else if (strength < 5) {
-                        meterDiv.classList.add('strength-strong');
+                        strengthMeter.style.width = '75%';
+                        strengthMeter.className = 'progress-bar bg-info';
                         strengthText.textContent = 'Strong password';
                     } else {
-                        meterDiv.classList.add('strength-very-strong');
+                        strengthMeter.style.width = '100%';
+                        strengthMeter.className = 'progress-bar bg-success';
                         strengthText.textContent = 'Very strong password';
                     }
                     
@@ -117,44 +119,44 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Validate username
             const usernameInput = document.getElementById('username');
-            const usernameError = document.getElementById('username-error');
+            const usernameErrorContainer = usernameInput?.closest('.mb-3')?.querySelector('.form-text.text-danger');
             const usernameRegex = /^[A-Za-z][A-Za-z0-9_.]*$/;
             
             if (usernameInput) {
                 if (usernameInput.value.trim() === '') {
-                    if (usernameError) usernameError.textContent = 'Username is required';
+                    if (usernameErrorContainer) usernameErrorContainer.textContent = 'Username is required';
                     usernameInput.classList.add('is-invalid');
                     isValid = false;
                 } else if (usernameInput.value.length < 3) {
-                    if (usernameError) usernameError.textContent = 'Username must be at least 3 characters';
+                    if (usernameErrorContainer) usernameErrorContainer.textContent = 'Username must be at least 3 characters';
                     usernameInput.classList.add('is-invalid');
                     isValid = false;
                 } else if (!usernameRegex.test(usernameInput.value)) {
-                    if (usernameError) usernameError.textContent = 'Username must start with a letter and can only contain letters, numbers, dots or underscores';
+                    if (usernameErrorContainer) usernameErrorContainer.textContent = 'Username must start with a letter and can only contain letters, numbers, dots or underscores';
                     usernameInput.classList.add('is-invalid');
                     isValid = false;
                 } else {
                     usernameInput.classList.remove('is-invalid');
-                    if (usernameError) usernameError.textContent = '';
+                    if (usernameErrorContainer) usernameErrorContainer.textContent = '';
                 }
             }
             
             // Validate email
             const emailInput = document.getElementById('email');
-            const emailError = document.getElementById('email-error');
+            const emailErrorContainer = emailInput?.closest('.mb-3')?.querySelector('.form-text.text-danger');
             
             if (emailInput && !emailRegex.test(emailInput.value.trim())) {
-                if (emailError) emailError.textContent = 'Please enter a valid email address';
+                if (emailErrorContainer) emailErrorContainer.textContent = 'Please enter a valid email address';
                 emailInput.classList.add('is-invalid');
                 isValid = false;
             } else if (emailInput) {
                 emailInput.classList.remove('is-invalid');
-                if (emailError) emailError.textContent = '';
+                if (emailErrorContainer) emailErrorContainer.textContent = '';
             }
             
             // Validate password
             const passwordInput = document.getElementById('password');
-            const passwordError = document.getElementById('password-error');
+            const passwordErrorContainer = passwordInput?.closest('.mb-3')?.querySelector('.form-text.text-danger');
             
             if (passwordInput) {
                 const password = passwordInput.value;
@@ -168,26 +170,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (!passwordValid) {
-                    if (passwordError) passwordError.textContent = 'Password must be at least 8 characters and include uppercase, lowercase, and numbers';
+                    if (passwordErrorContainer) passwordErrorContainer.textContent = 'Password must be at least 8 characters and include uppercase, lowercase, and numbers';
                     passwordInput.classList.add('is-invalid');
                     isValid = false;
                 } else {
                     passwordInput.classList.remove('is-invalid');
-                    if (passwordError) passwordError.textContent = '';
+                    if (passwordErrorContainer) passwordErrorContainer.textContent = '';
                 }
             }
             
             // Validate password confirmation
             const password2Input = document.getElementById('password2');
-            const password2Error = document.getElementById('password2-error');
+            const password2ErrorContainer = password2Input?.closest('.mb-3')?.querySelector('.form-text.text-danger');
             
             if (passwordInput && password2Input && passwordInput.value !== password2Input.value) {
-                if (password2Error) password2Error.textContent = 'Passwords do not match';
+                if (password2ErrorContainer) password2ErrorContainer.textContent = 'Passwords do not match';
                 password2Input.classList.add('is-invalid');
                 isValid = false;
             } else if (password2Input) {
                 password2Input.classList.remove('is-invalid');
-                if (password2Error) password2Error.textContent = '';
+                if (password2ErrorContainer) password2ErrorContainer.textContent = '';
             }
             
             if (!isValid) {
@@ -200,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const twoFactorForm = document.getElementById('two-factor-form');
     if (twoFactorForm) {
         const tokenInput = document.getElementById('token');
-        const tokenError = document.getElementById('token-error');
+        const tokenErrorContainer = tokenInput?.closest('.mb-3')?.querySelector('.form-text.text-danger');
         
         twoFactorForm.addEventListener('submit', function(e) {
             let isValid = true;
@@ -208,12 +210,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tokenInput) {
                 const tokenRegex = /^\d{6}$/;
                 if (!tokenRegex.test(tokenInput.value.trim())) {
-                    if (tokenError) tokenError.textContent = 'Authentication code must be 6 digits';
+                    if (tokenErrorContainer) tokenErrorContainer.textContent = 'Authentication code must be 6 digits';
                     tokenInput.classList.add('is-invalid');
                     isValid = false;
                 } else {
                     tokenInput.classList.remove('is-invalid');
-                    if (tokenError) tokenError.textContent = '';
+                    if (tokenErrorContainer) tokenErrorContainer.textContent = '';
                 }
             }
             
@@ -264,8 +266,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Skip validation if field is empty and not required
         if (input.value.trim() === '' && !input.hasAttribute('required')) {
             input.classList.remove('is-invalid');
-            const errorElement = document.getElementById(`${input.id}-error`);
-            if (errorElement) errorElement.textContent = '';
+            const errorContainer = input?.closest('.mb-3')?.querySelector('.form-text.text-danger');
+            if (errorContainer) errorContainer.textContent = '';
             return;
         }
         
@@ -288,34 +290,34 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Email validation helper
     function validateEmail(input) {
-        const errorElement = document.getElementById(`${input.id}-error`);
+        const errorContainer = input?.closest('.mb-3')?.querySelector('.form-text.text-danger');
         
         if (!emailRegex.test(input.value.trim())) {
             input.classList.add('is-invalid');
-            if (errorElement) errorElement.textContent = 'Please enter a valid email address';
+            if (errorContainer) errorContainer.textContent = 'Please enter a valid email address';
         } else {
             input.classList.remove('is-invalid');
-            if (errorElement) errorElement.textContent = '';
+            if (errorContainer) errorContainer.textContent = '';
         }
     }
     
     // Username validation helper
     function validateUsername(input) {
-        const errorElement = document.getElementById(`${input.id}-error`);
+        const errorContainer = input?.closest('.mb-3')?.querySelector('.form-text.text-danger');
         const usernameRegex = /^[A-Za-z][A-Za-z0-9_.]*$/;
         
         if (input.value.trim() === '') {
             input.classList.add('is-invalid');
-            if (errorElement) errorElement.textContent = 'Username is required';
+            if (errorContainer) errorContainer.textContent = 'Username is required';
         } else if (input.value.length < 3) {
             input.classList.add('is-invalid');
-            if (errorElement) errorElement.textContent = 'Username must be at least 3 characters';
+            if (errorContainer) errorContainer.textContent = 'Username must be at least 3 characters';
         } else if (!usernameRegex.test(input.value)) {
             input.classList.add('is-invalid');
-            if (errorElement) errorElement.textContent = 'Username must start with a letter and can only contain letters, numbers, dots or underscores';
+            if (errorContainer) errorContainer.textContent = 'Username must start with a letter and can only contain letters, numbers, dots or underscores';
         } else {
             input.classList.remove('is-invalid');
-            if (errorElement) errorElement.textContent = '';
+            if (errorContainer) errorContainer.textContent = '';
         }
     }
 });
