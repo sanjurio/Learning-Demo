@@ -225,73 +225,86 @@ def setup_initial_data():
             
             db.session.commit()
             
+            # Commit the interests first to ensure they're all created
+            db.session.commit()
+            print("Created interests")
+            
             # Create some courses
             ml_interest = Interest.query.filter_by(name='Machine Learning').first()
             dl_interest = Interest.query.filter_by(name='Deep Learning').first()
             nlp_interest = Interest.query.filter_by(name='Natural Language Processing').first()
             
-            courses = [
-                {
-                    'title': 'Introduction to Machine Learning',
-                    'description': 'Learn the basics of machine learning algorithms and techniques.',
-                    'interests': [ml_interest],
-                    'lessons': [
-                        {'title': 'What is Machine Learning?', 'content': 'Machine learning is a field of study that gives computers the ability to learn without being explicitly programmed.', 'order': 1},
-                        {'title': 'Supervised Learning', 'content': 'Supervised learning is a type of machine learning where the model is trained on labeled data.', 'order': 2},
-                        {'title': 'Unsupervised Learning', 'content': 'Unsupervised learning is a type of machine learning where the model is trained on unlabeled data.', 'order': 3}
-                    ]
-                },
-                {
-                    'title': 'Deep Learning Fundamentals',
-                    'description': 'Explore neural networks and deep learning architectures.',
-                    'interests': [dl_interest],
-                    'lessons': [
-                        {'title': 'Neural Networks Basics', 'content': 'A neural network is a series of algorithms that endeavors to recognize underlying relationships in a set of data.', 'order': 1},
-                        {'title': 'Activation Functions', 'content': 'Activation functions determine the output of a neural network model and whether a neuron will be activated or not.', 'order': 2},
-                        {'title': 'Backpropagation', 'content': 'Backpropagation is an algorithm used to train neural networks by adjusting the weights based on the error rate.', 'order': 3}
-                    ]
-                },
-                {
-                    'title': 'Natural Language Processing with Python',
-                    'description': 'Learn to process and analyze text data using Python.',
-                    'interests': [nlp_interest, ml_interest],
-                    'lessons': [
-                        {'title': 'Text Preprocessing', 'content': 'Text preprocessing involves cleaning and transforming text data to make it suitable for analysis.', 'order': 1},
-                        {'title': 'Word Embeddings', 'content': 'Word embeddings are a type of word representation that allows words with similar meaning to have similar representation.', 'order': 2},
-                        {'title': 'Sentiment Analysis', 'content': 'Sentiment analysis is the process of determining the emotional tone behind a series of words.', 'order': 3}
-                    ]
-                }
-            ]
-            
-            for course_data in courses:
-                course = Course(
-                    title=course_data['title'],
-                    description=course_data['description'],
-                    created_by=admin.id
-                )
-                db.session.add(course)
-                db.session.flush()  # Get the course ID
+            if ml_interest and dl_interest and nlp_interest:
+                from models import Course, CourseInterest, Lesson
                 
-                # Add course-interest relationships
-                for interest in course_data['interests']:
-                    course_interest = CourseInterest(
-                        course_id=course.id,
-                        interest_id=interest.id,
-                        created_by=admin.id
-                    )
-                    db.session.add(course_interest)
+                courses = [
+                    {
+                        'title': 'Introduction to Machine Learning',
+                        'description': 'Learn the basics of machine learning algorithms and techniques.',
+                        'interests': [ml_interest],
+                        'lessons': [
+                            {'title': 'What is Machine Learning?', 'content': 'Machine learning is a field of study that gives computers the ability to learn without being explicitly programmed.', 'order': 1},
+                            {'title': 'Supervised Learning', 'content': 'Supervised learning is a type of machine learning where the model is trained on labeled data.', 'order': 2},
+                            {'title': 'Unsupervised Learning', 'content': 'Unsupervised learning is a type of machine learning where the model is trained on unlabeled data.', 'order': 3}
+                        ]
+                    },
+                    {
+                        'title': 'Deep Learning Fundamentals',
+                        'description': 'Explore neural networks and deep learning architectures.',
+                        'interests': [dl_interest],
+                        'lessons': [
+                            {'title': 'Neural Networks Basics', 'content': 'A neural network is a series of algorithms that endeavors to recognize underlying relationships in a set of data.', 'order': 1},
+                            {'title': 'Activation Functions', 'content': 'Activation functions determine the output of a neural network model and whether a neuron will be activated or not.', 'order': 2},
+                            {'title': 'Backpropagation', 'content': 'Backpropagation is an algorithm used to train neural networks by adjusting the weights based on the error rate.', 'order': 3}
+                        ]
+                    },
+                    {
+                        'title': 'Natural Language Processing with Python',
+                        'description': 'Learn to process and analyze text data using Python.',
+                        'interests': [nlp_interest, ml_interest],
+                        'lessons': [
+                            {'title': 'Text Preprocessing', 'content': 'Text preprocessing involves cleaning and transforming text data to make it suitable for analysis.', 'order': 1},
+                            {'title': 'Word Embeddings', 'content': 'Word embeddings are a type of word representation that allows words with similar meaning to have similar representation.', 'order': 2},
+                            {'title': 'Sentiment Analysis', 'content': 'Sentiment analysis is the process of determining the emotional tone behind a series of words.', 'order': 3}
+                        ]
+                    }
+                ]
                 
-                # Add lessons
-                for lesson_data in course_data['lessons']:
-                    lesson = Lesson(
-                        title=lesson_data['title'],
-                        content=lesson_data['content'],
-                        course_id=course.id,
-                        order=lesson_data['order']
-                    )
-                    db.session.add(lesson)
-            
-            db.session.commit()
+                for course_data in courses:
+                    # Check if course already exists
+                    existing_course = Course.query.filter_by(title=course_data['title']).first()
+                    if not existing_course:
+                        course = Course(
+                            title=course_data['title'],
+                            description=course_data['description'],
+                            created_by=admin.id
+                        )
+                        db.session.add(course)
+                        db.session.flush()  # Get the course ID
+                        
+                        # Add course-interest relationships
+                        for interest in course_data['interests']:
+                            course_interest = CourseInterest(
+                                course_id=course.id,
+                                interest_id=interest.id,
+                                created_by=admin.id
+                            )
+                            db.session.add(course_interest)
+                        
+                        # Add lessons
+                        for lesson_data in course_data['lessons']:
+                            lesson = Lesson(
+                                title=lesson_data['title'],
+                                content=lesson_data['content'],
+                                course_id=course.id,
+                                order=lesson_data['order']
+                            )
+                            db.session.add(lesson)
+                
+                db.session.commit()
+                print("Created courses and lessons")
+            else:
+                print("Could not find required interests to create courses")
             print("Created initial interests, courses, and lessons")
     except Exception as e:
         print(f"Error in setup_initial_data: {e}")
