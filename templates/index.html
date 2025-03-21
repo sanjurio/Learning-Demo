@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="section">
+    <div class="row">
+        <div class="col">
+            <h1 class="section-title">Welcome to AI Learning Platform</h1>
+            <p>Discover the exciting world of artificial intelligence through our comprehensive courses and learning materials.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2>Start Your AI Journey Today</h2>
+                    <p>Our learning platform offers courses in various areas of artificial intelligence, from machine learning fundamentals to advanced neural networks.</p>
+                    
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('user_dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+                    {% else %}
+                        <a href="{{ url_for('register') }}" class="btn btn-primary">Register Now</a>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline">Login</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2>Why Choose Our Platform?</h2>
+                    <ul>
+                        <li>Expert-curated content</li>
+                        <li>Personalized learning path</li>
+                        <li>Hands-on projects and exercises</li>
+                        <li>Access based on your interests</li>
+                        <li>Comprehensive curriculum</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <h2 class="section-title">Featured Topics</h2>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3>Machine Learning</h3>
+                    <p>Learn the fundamentals of machine learning algorithms, from supervised to unsupervised learning.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3>Deep Learning</h3>
+                    <p>Explore neural networks, convolutional networks, and recurrent networks for complex pattern recognition.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3>Natural Language Processing</h3>
+                    <p>Discover how to process and analyze human language using computational methods.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <h2 class="section-title">How It Works</h2>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-user-plus fa-3x"></i>
+                    </div>
+                    <h4>Sign Up</h4>
+                    <p>Create your account and get started</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-thumbs-up fa-3x"></i>
+                    </div>
+                    <h4>Get Approved</h4>
+                    <p>Admin will review and approve your account</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-lightbulb fa-3x"></i>
+                    </div>
+                    <h4>Choose Interests</h4>
+                    <p>Select your AI interests and get access</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <i class="fas fa-graduation-cap fa-3x"></i>
+                    </div>
+                    <h4>Start Learning</h4>
+                    <p>Access courses and expand your knowledge</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

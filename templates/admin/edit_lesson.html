@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h1 class="section-title">{{ 'Edit Lesson' if lesson else 'Add New Lesson' }}</h1>
+    
+    <div class="admin-nav">
+        <ul>
+            <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('admin_users') }}">Users</a></li>
+            <li><a href="{{ url_for('admin_pending_users') }}">Pending Users</a></li>
+            <li><a href="{{ url_for('admin_courses') }}" class="active">Courses</a></li>
+            <li><a href="{{ url_for('admin_interests') }}">Interests</a></li>
+        </ul>
+    </div>
+    
+    <div class="admin-container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_courses') }}">Courses</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_lessons', course_id=course.id) }}">{{ course.title }} Lessons</a></li>
+                <li class="breadcrumb-item active">{{ 'Edit Lesson' if lesson else 'Add Lesson' }}</li>
+            </ol>
+        </nav>
+        
+        <div class="admin-form-container">
+            <form method="post" action="">
+                {{ form.hidden_tag() }}
+                
+                <div class="form-group">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-control") }}
+                    <div class="error-message">
+                        {% for error in form.title.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.order.label(class="form-label") }}
+                    {{ form.order(class="form-control", type="number") }}
+                    <div class="form-text">The order in which this lesson appears in the course (e.g., 1 for first lesson)</div>
+                    <div class="error-message">
+                        {% for error in form.order.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.content.label(class="form-label") }}
+                    
+                    <div class="editor-toolbar">
+                        <button type="button" onclick="formatText('b')"><i class="fas fa-bold"></i></button>
+                        <button type="button" onclick="formatText('i')"><i class="fas fa-italic"></i></button>
+                        <button type="button" onclick="formatText('h2')"><i class="fas fa-heading"></i></button>
+                        <button type="button" onclick="formatText('ul')"><i class="fas fa-list-ul"></i></button>
+                        <button type="button" onclick="formatText('ol')"><i class="fas fa-list-ol"></i></button>
+                        <button type="button" onclick="formatText('code')"><i class="fas fa-code"></i></button>
+                        <button type="button" onclick="formatText('pre')"><i class="fas fa-file-code"></i></button>
+                        <button type="button" onclick="formatText('a')"><i class="fas fa-link"></i></button>
+                    </div>
+                    
+                    {{ form.content(class="form-control content-editor", rows=15) }}
+                    <div class="form-text">You can use HTML tags for formatting.</div>
+                    <div class="error-message">
+                        {% for error in form.content.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.submit(class="btn btn-primary") }}
+                    <a href="{{ url_for('admin_lessons', course_id=course.id) }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function formatText(tag) {
+        const textarea = document.querySelector('.content-editor');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        let replacement = '';
+        
+        switch(tag) {
+            case 'b':
+                replacement = `<b>${selectedText}</b>`;
+                break;
+            case 'i':
+                replacement = `<i>${selectedText}</i>`;
+                break;
+            case 'h2':
+                replacement = `<h2>${selectedText}</h2>`;
+                break;
+            case 'ul':
+                replacement = `<ul>\n  <li>${selectedText}</li>\n</ul>`;
+                break;
+            case 'ol':
+                replacement = `<ol>\n  <li>${selectedText}</li>\n</ol>`;
+                break;
+            case 'code':
+                replacement = `<code>${selectedText}</code>`;
+                break;
+            case 'pre':
+                replacement = `<pre>${selectedText}</pre>`;
+                break;
+            case 'a':
+                const url = prompt('Enter URL:', 'https://');
+                if (url) {
+                    replacement = `<a href="${url}" target="_blank">${selectedText || url}</a>`;
+                } else {
+                    return;
+                }
+                break;
+        }
+        
+        textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+        textarea.focus();
+        textarea.selectionStart = start;
+        textarea.selectionEnd = start + replacement.length;
+    }
+</script>
+{% endblock %}

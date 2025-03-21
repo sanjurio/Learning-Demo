@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h1 class="section-title">Manage Access for {{ user.username }}</h1>
+    
+    <div class="admin-nav">
+        <ul>
+            <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('admin_users') }}" class="active">Users</a></li>
+            <li><a href="{{ url_for('admin_pending_users') }}">Pending Users</a></li>
+            <li><a href="{{ url_for('admin_courses') }}">Courses</a></li>
+            <li><a href="{{ url_for('admin_interests') }}">Interests</a></li>
+        </ul>
+    </div>
+    
+    <div class="admin-container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('admin_users') }}">Users</a></li>
+                <li class="breadcrumb-item active">{{ user.username }} - Interests</li>
+            </ol>
+        </nav>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>User Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Username:</strong> {{ user.username }}</p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Registered:</strong> {{ user.created_at.strftime('%d %b, %Y') }}</p>
+                        <p><strong>Status:</strong> 
+                            {% if user.is_approved %}
+                            <span class="badge badge-success">Approved</span>
+                            {% else %}
+                            <span class="badge badge-warning">Pending</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3>Manage Interest Access</h3>
+            </div>
+            <div class="card-body">
+                {% if not interest_status %}
+                <div class="alert alert-info">
+                    <p>This user hasn't selected any interests yet.</p>
+                </div>
+                {% else %}
+                <div class="responsive-table">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>Interest</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for interest in interest_status %}
+                            {% if interest.selected %}
+                            <tr>
+                                <td>{{ interest.interest.name }}</td>
+                                <td>{{ interest.interest.description }}</td>
+                                <td>
+                                    {% if interest.access_granted %}
+                                    <span class="badge badge-success">Access Granted</span>
+                                    {% else %}
+                                    <span class="badge badge-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if interest.access_granted %}
+                                    <form method="post" action="{{ url_for('admin_update_user_interest') }}">
+                                        {{ form.hidden_tag() }}
+                                        {{ form.user_id(value=user.id) }}
+                                        {{ form.interest_id(value=interest.interest.id) }}
+                                        {{ form.action(value='revoke') }}
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-times"></i> Revoke Access
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <form method="post" action="{{ url_for('admin_update_user_interest') }}">
+                                        {{ form.hidden_tag() }}
+                                        {{ form.user_id(value=user.id) }}
+                                        {{ form.interest_id(value=interest.interest.id) }}
+                                        {{ form.action(value='grant') }}
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="fas fa-check"></i> Grant Access
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <a href="{{ url_for('admin_users') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Users
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

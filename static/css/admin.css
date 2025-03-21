@@ -1,0 +1,414 @@
+/* Admin-specific styles for AI Learning Platform */
+
+/* Admin dashboard cards */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 1.5rem;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card:nth-child(1) {
+  border-top: 3px solid var(--primary-color);
+}
+
+.stat-card:nth-child(2) {
+  border-top: 3px solid var(--success-color);
+}
+
+.stat-card:nth-child(3) {
+  border-top: 3px solid var(--warning-color);
+}
+
+.stat-card:nth-child(4) {
+  border-top: 3px solid var(--danger-color);
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 1rem 0;
+}
+
+.stat-label {
+  font-size: 1rem;
+  color: #777;
+  margin-bottom: 0.5rem;
+}
+
+/* Admin navigation */
+.admin-nav {
+  background-color: var(--light-color);
+  border-radius: var(--border-radius);
+  margin-bottom: 2rem;
+}
+
+.admin-nav ul {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  overflow-x: auto;
+}
+
+.admin-nav li {
+  flex: 1;
+  text-align: center;
+}
+
+.admin-nav a {
+  display: block;
+  padding: 1rem;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: var(--transition);
+  border-bottom: 3px solid transparent;
+}
+
+.admin-nav a:hover,
+.admin-nav a.active {
+  background-color: white;
+  border-bottom-color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+  .admin-nav ul {
+    flex-direction: column;
+  }
+  
+  .admin-nav a {
+    text-align: left;
+    border-left: 3px solid transparent;
+    border-bottom: none;
+  }
+  
+  .admin-nav a:hover,
+  .admin-nav a.active {
+    border-left-color: var(--primary-color);
+    border-bottom-color: transparent;
+  }
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-container {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.admin-section-title {
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--light-color);
+  font-size: 1.5rem;
+  color: var(--secondary-color);
+}
+
+/* Tabs for admin panels */
+.tab-container {
+  margin-bottom: 2rem;
+}
+
+.tab-nav {
+  display: flex;
+  background-color: var(--light-color);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  overflow: hidden;
+}
+
+.tab-link {
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+  font-weight: 500;
+  color: var(--text-color);
+  transition: var(--transition);
+}
+
+.tab-link.active {
+  background-color: white;
+  color: var(--primary-color);
+}
+
+.tab-content {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+/* Course management */
+.course-management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-course-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-course-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 0 0 0 var(--border-radius);
+}
+
+.admin-course-card .course-image {
+  height: 150px;
+}
+
+/* User management */
+.user-table {
+  width: 100%;
+  margin-bottom: 2rem;
+  box-shadow: var(--box-shadow);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.user-table th {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.user-approval-card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.user-email {
+  color: #777;
+  margin-bottom: 0.5rem;
+}
+
+.user-registered {
+  font-size: 0.9rem;
+  color: #999;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Form styling for admin */
+.admin-form-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  outline: none;
+}
+
+.form-text {
+  font-size: 0.9rem;
+  color: #777;
+  margin-top: 0.25rem;
+}
+
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.interests-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.interest-item {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.interest-name {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.interest-description {
+  color: #777;
+  margin-bottom: 1rem;
+  flex: 1;
+}
+
+.interest-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* Content editor */
+.content-editor {
+  min-height: 300px;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.editor-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.editor-toolbar button {
+  padding: 0.5rem;
+  background-color: var(--light-color);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+.editor-toolbar button:hover {
+  background-color: #ddd;
+}
+
+/* Switch control for toggles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--primary-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Responsive admin tables */
+@media (max-width: 768px) {
+  .responsive-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}

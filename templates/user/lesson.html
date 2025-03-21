@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('user_dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('view_course', course_id=course.id) }}">{{ course.title }}</a></li>
+            <li class="breadcrumb-item active">{{ lesson.title }}</li>
+        </ol>
+    </nav>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h1 class="card-title">{{ lesson.title }}</h1>
+            <p class="text-muted">Lesson {{ lesson.order }} of {{ course.title }}</p>
+            
+            <hr>
+            
+            <div class="lesson-content">
+                {{ lesson.content|safe }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 text-left">
+            {% if prev_lesson %}
+            <a href="{{ url_for('view_lesson', lesson_id=prev_lesson.id) }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Previous: {{ prev_lesson.title }}
+            </a>
+            {% endif %}
+        </div>
+        <div class="col-md-6 text-right">
+            {% if next_lesson %}
+            <a href="{{ url_for('view_lesson', lesson_id=next_lesson.id) }}" class="btn btn-primary float-end">
+                Next: {{ next_lesson.title }} <i class="fas fa-arrow-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('view_course', course_id=course.id) }}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> Back to Course
+        </a>
+    </div>
+</div>
+{% endblock %}

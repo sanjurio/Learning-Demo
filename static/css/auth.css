@@ -1,0 +1,204 @@
+/* Authentication page styles for AI Learning Platform */
+
+.auth-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.auth-title {
+  font-size: 1.8rem;
+  color: var(--secondary-color);
+  margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+  color: #777;
+  font-size: 1rem;
+}
+
+.auth-form {
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  outline: none;
+}
+
+.form-text {
+  font-size: 0.9rem;
+  color: #777;
+  margin-top: 0.25rem;
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.form-check-input {
+  margin-right: 0.5rem;
+}
+
+.form-check-label {
+  font-size: 0.95rem;
+}
+
+.error-message {
+  color: var(--danger-color);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+}
+
+.auth-footer p {
+  margin-bottom: 0.5rem;
+  color: #777;
+}
+
+/* 2FA Specific Styles */
+.auth-2fa-container {
+  text-align: center;
+}
+
+.auth-2fa-qr {
+  width: 200px;
+  height: 200px;
+  margin: 1.5rem auto;
+  padding: 0.5rem;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+}
+
+.auth-2fa-code {
+  font-family: monospace;
+  background-color: var(--light-color);
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  margin: 1rem auto;
+  max-width: 300px;
+  word-break: break-all;
+}
+
+.auth-2fa-steps {
+  text-align: left;
+  margin: 1.5rem 0;
+}
+
+.auth-2fa-steps li {
+  margin-bottom: 0.75rem;
+}
+
+.token-input {
+  letter-spacing: 0.5rem;
+  font-size: 1.5rem;
+  text-align: center;
+  font-family: monospace;
+}
+
+/* Password strength meter */
+.password-strength-meter {
+  height: 5px;
+  width: 100%;
+  background-color: #eee;
+  border-radius: 3px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.password-strength-meter div {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease-in-out;
+}
+
+.strength-weak {
+  width: 25%;
+  background-color: var(--danger-color);
+}
+
+.strength-medium {
+  width: 50%;
+  background-color: var(--warning-color);
+}
+
+.strength-strong {
+  width: 75%;
+  background-color: var(--primary-color);
+}
+
+.strength-very-strong {
+  width: 100%;
+  background-color: var(--success-color);
+}
+
+.password-strength-text {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Animation for the authentication container */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-container {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Responsive styles */
+@media (max-width: 576px) {
+  .auth-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  
+  .token-input {
+    letter-spacing: 0.3rem;
+    font-size: 1.2rem;
+  }
+}

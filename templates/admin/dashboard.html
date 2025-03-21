@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h1 class="section-title">Admin Dashboard</h1>
+    
+    <div class="admin-nav">
+        <ul>
+            <li><a href="{{ url_for('admin_dashboard') }}" class="active">Dashboard</a></li>
+            <li><a href="{{ url_for('admin_users') }}">Users</a></li>
+            <li><a href="{{ url_for('admin_pending_users') }}">Pending Users</a></li>
+            <li><a href="{{ url_for('admin_courses') }}">Courses</a></li>
+            <li><a href="{{ url_for('admin_interests') }}">Interests</a></li>
+        </ul>
+    </div>
+    
+    <div class="admin-stats">
+        <div class="stat-card">
+            <div class="stat-label">Pending Users</div>
+            <div class="stat-value">{{ pending_users_count }}</div>
+            <a href="{{ url_for('admin_pending_users') }}" class="btn btn-primary">Manage</a>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value">{{ users_count }}</div>
+            <a href="{{ url_for('admin_users') }}" class="btn btn-primary">Manage</a>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Courses</div>
+            <div class="stat-value">{{ courses_count }}</div>
+            <a href="{{ url_for('admin_courses') }}" class="btn btn-primary">Manage</a>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Interests</div>
+            <div class="stat-value">{{ interests_count }}</div>
+            <a href="{{ url_for('admin_interests') }}" class="btn btn-primary">Manage</a>
+        </div>
+    </div>
+    
+    <div class="admin-container">
+        <h2 class="admin-section-title">Quick Actions</h2>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h3>Content Management</h3>
+                        <p>Manage your platform's learning content</p>
+                        <a href="{{ url_for('admin_courses') }}" class="btn btn-primary">Manage Courses</a>
+                        <a href="{{ url_for('admin_interests') }}" class="btn btn-outline">Manage Interests</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h3>User Management</h3>
+                        <p>Manage users and pending registrations</p>
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-primary">Manage Users</a>
+                        <a href="{{ url_for('admin_pending_users') }}" class="btn btn-outline">Pending Approvals</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

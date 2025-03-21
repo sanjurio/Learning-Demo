@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section">
+    <h1 class="section-title">My Interests</h1>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <p>Select your interests in artificial intelligence to access relevant courses. Your selections will be reviewed by administrators who will grant you access.</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Select Your Interests</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('user_interests') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="checkbox-group">
+                            {% for choice in form.interests.choices %}
+                            <div class="checkbox-item">
+                                <input type="checkbox" name="interests" id="interest-{{ choice[0] }}" value="{{ choice[0] }}"
+                                    {% if choice[0] in form.interests.data %}checked{% endif %}>
+                                <label for="interest-{{ choice[0] }}">{{ choice[1] }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Interest Access Status</h3>
+                </div>
+                <div class="card-body">
+                    {% if interest_status %}
+                    <div class="list-group">
+                        {% for interest in interest_status %}
+                        {% if interest.selected %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ interest.interest.name }}</h5>
+                                {% if interest.access_granted %}
+                                <span class="badge badge-success">Access Granted</span>
+                                {% else %}
+                                <span class="badge badge-warning">Pending</span>
+                                {% endif %}
+                            </div>
+                            <p class="mb-1">{{ interest.interest.description }}</p>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p>You haven't selected any interests yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
