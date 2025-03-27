@@ -110,21 +110,53 @@ def get_pending_users():
 
 def approve_user(user_id, admin_id):
     """Approve a pending user registration"""
-    user = User.query.get(user_id)
-    if user and not user.is_approved:
-        user.is_approved = True
-        db.session.commit()
-        return True
-    return False
+    try:
+        print(f"Approving user_id: {user_id} by admin_id: {admin_id}")
+        user = User.query.get(user_id)
+        admin = User.query.get(admin_id)
+        
+        if not user or not admin or not admin.is_admin:
+            print(f"Invalid user ({user}) or admin ({admin})")
+            return False
+        
+        if user and not user.is_approved:
+            user.is_approved = True
+            db.session.commit()
+            print(f"Successfully approved user: {user.username}")
+            return True
+        print(f"User {user.username if user else 'None'} already approved or not found")
+        return False
+    except Exception as e:
+        print(f"Error approving user: {e}")
+        db.session.rollback()
+        return False
 
 def reject_user(user_id):
     """Reject and delete a pending user registration"""
-    user = User.query.get(user_id)
-    if user and not user.is_approved:
-        db.session.delete(user)
-        db.session.commit()
-        return True
-    return False
+    try:
+        print(f"Rejecting user_id: {user_id}")
+        user = User.query.get(user_id)
+        
+        if not user:
+            print("User not found")
+            return False
+        
+        if user and not user.is_approved:
+            # First delete any related user interests to avoid constraint errors
+            UserInterest.query.filter_by(user_id=user.id).delete()
+            
+            # Now delete the user
+            db.session.delete(user)
+            db.session.commit()
+            print(f"Successfully rejected user: {user.username}")
+            return True
+        
+        print(f"User {user.username if user else 'None'} already approved or not found")
+        return False
+    except Exception as e:
+        print(f"Error rejecting user: {e}")
+        db.session.rollback()
+        return False
 
 def grant_interest_access(user_id, interest_id, admin_id):
     """Grant a user access to content related to an interest"""
