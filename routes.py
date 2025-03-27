@@ -66,22 +66,15 @@ def login():
             flash('Your account is pending approval from an administrator.', 'warning')
             return render_template('auth/login.html', title='Sign In', form=form)
         
-        # If 2FA is enabled, redirect to 2FA verification
-        if user.is_2fa_enabled:
-            # Store user ID in session for the 2FA step
-            session['user_id_for_2fa'] = user.id
-            session['remember_me'] = form.remember_me.data
-            return redirect(url_for('two_factor_auth'))
+        # Check if user has 2FA configured
+        if not user.otp_secret:
+            flash('Your account is missing 2FA configuration. Please contact an administrator.', 'danger')
+            return render_template('auth/login.html', title='Sign In', form=form)
         
-        # If 2FA is not enabled, log the user in directly
-        app.logger.info(f"Login successful, logging in user: {user.username}")
-        login_user(user, remember=form.remember_me.data)
-        
-        next_page = request.args.get('next')
-        if not next_page or urlparse(next_page).netloc != '':
-            next_page = url_for('index')
-        
-        return redirect(next_page)
+        # Store user ID in session for the 2FA step (2FA is mandatory for all users)
+        session['user_id_for_2fa'] = user.id
+        session['remember_me'] = form.remember_me.data
+        return redirect(url_for('two_factor_auth'))
     
     return render_template('auth/login.html', title='Sign In', form=form)
 
@@ -121,20 +114,85 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     
+    # Initialize form and 2FA setup
     form = RegistrationForm()
-    if form.validate_on_submit():
-        user = User(
-            username=form.username.data,
-            email=form.email.data,
-            is_approved=False  # Requires admin approval
-        )
-        user.set_password(form.password.data)
-        db.session.add(user)
-        db.session.commit()
-        
-        flash('Registration successful! Your account is pending approval from an administrator.', 'success')
-        return redirect(url_for('login'))
     
+    # First step: collect user details
+    if request.method == 'GET' or not form.validate_on_submit():
+        return render_template('auth/register.html', title='Register', form=form)
+    
+    # Second step: generate and display OTP QR code
+    if form.validate_on_submit() and 'registration_step' not in session:
+        # Generate OTP secret
+        otp_secret = generate_otp_secret()
+        
+        # Store data in session for the next step
+        session['registration_data'] = {
+            'username': form.username.data,
+            'email': form.email.data,
+            'password': form.password.data,
+            'otp_secret': otp_secret
+        }
+        session['registration_step'] = 'setup_2fa'
+        
+        # Generate QR code for 2FA setup
+        qr_code = generate_qr_code(form.username.data, otp_secret)
+        
+        # Show 2FA setup page
+        setup_form = SetupTwoFactorForm()
+        return render_template('auth/two_factor.html', 
+                               title='Setup Two-Factor Authentication',
+                               form=setup_form, 
+                               qr_code=qr_code, 
+                               setup=True,
+                               registration=True)
+    
+    # Final step: verify OTP and create account
+    if 'registration_step' in session and session['registration_step'] == 'setup_2fa':
+        setup_form = SetupTwoFactorForm()
+        
+        if setup_form.validate_on_submit():
+            # Get stored registration data
+            registration_data = session.get('registration_data', {})
+            
+            # Verify the OTP code
+            if verify_totp(registration_data.get('otp_secret'), setup_form.token.data):
+                # Create the new user
+                user = User(
+                    username=registration_data.get('username'),
+                    email=registration_data.get('email'),
+                    is_approved=False,  # Requires admin approval
+                    otp_secret=registration_data.get('otp_secret'),
+                    is_2fa_enabled=True  # 2FA is mandatory
+                )
+                user.set_password(registration_data.get('password'))
+                
+                # Save to database
+                db.session.add(user)
+                db.session.commit()
+                
+                # Clear session data
+                session.pop('registration_data', None)
+                session.pop('registration_step', None)
+                
+                flash('Registration successful! Your 2FA setup is complete. Your account is pending approval from an administrator.', 'success')
+                return redirect(url_for('login'))
+            else:
+                flash('Invalid authentication code. Please try again.', 'danger')
+        
+        # Show 2FA setup page again if code validation failed
+        qr_code = generate_qr_code(
+            registration_data.get('username'),
+            registration_data.get('otp_secret')
+        )
+        return render_template('auth/two_factor.html', 
+                               title='Setup Two-Factor Authentication',
+                               form=setup_form, 
+                               qr_code=qr_code, 
+                               setup=True,
+                               registration=True)
+    
+    # Fallback
     return render_template('auth/register.html', title='Register', form=form)
 
 @app.route('/logout')
@@ -177,12 +235,8 @@ def setup_2fa():
 @app.route('/disable-2fa', methods=['POST'])
 @login_required
 def disable_2fa():
-    # Disable 2FA for the user
-    current_user.is_2fa_enabled = False
-    current_user.otp_secret = None
-    db.session.commit()
-    
-    flash('Two-factor authentication has been disabled for your account.', 'success')
+    # 2FA is mandatory - disabling is not allowed
+    flash('Two-factor authentication is mandatory and cannot be disabled.', 'warning')
     return redirect(url_for('profile'))
 
 # User routes

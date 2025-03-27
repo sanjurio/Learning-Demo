@@ -87,28 +87,15 @@
                     <h3>Two-Factor Authentication</h3>
                 </div>
                 <div class="card-body">
-                    {% if current_user.is_2fa_enabled %}
                     <div class="alert alert-success">
-                        <i class="fas fa-shield-alt"></i> Two-factor authentication is enabled.
+                        <i class="bi bi-shield-check me-2"></i> Two-factor authentication is enabled and mandatory.
                     </div>
                     
-                    <form id="disable-2fa-form" method="post" action="{{ url_for('disable_2fa') }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-times"></i> Disable 2FA
-                        </button>
-                    </form>
-                    {% else %}
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i> Two-factor authentication is not enabled.
+                    <p>For your account security, two-factor authentication is required for all users on this platform.</p>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i> If you've lost access to your authenticator app, please contact an administrator for assistance.
                     </div>
-                    
-                    <p>Enhance your account security by enabling two-factor authentication.</p>
-                    
-                    <a href="{{ url_for('setup_2fa') }}" class="btn btn-primary">
-                        <i class="fas fa-shield-alt"></i> Enable 2FA
-                    </a>
-                    {% endif %}
                 </div>
             </div>
             

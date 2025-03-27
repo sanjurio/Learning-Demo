@@ -12,7 +12,11 @@
                 <div class="text-center mb-4">
                     <h2 class="card-title">Two-Factor Authentication</h2>
                     {% if setup %}
-                    <p class="text-muted">Set up 2FA to enhance your account security</p>
+                        {% if registration %}
+                        <p class="text-muted">Set up required 2FA for your account</p>
+                        {% else %}
+                        <p class="text-muted">Set up 2FA to enhance your account security</p>
+                        {% endif %}
                     {% else %}
                     <p class="text-muted">Enter the 6-digit code from your authenticator app</p>
                     {% endif %}
@@ -28,7 +32,13 @@
                     
                     <p>Or manually enter this code in your app:</p>
                     <div class="d-flex align-items-center justify-content-center mb-3">
-                        <div class="border px-3 py-2 rounded bg-dark me-2" id="secret-key">{{ session.otp_secret }}</div>
+                        <div class="border px-3 py-2 rounded bg-dark me-2" id="secret-key">
+                            {% if registration %}
+                            {{ session.registration_data.otp_secret }}
+                            {% else %}
+                            {{ session.otp_secret }}
+                            {% endif %}
+                        </div>
                         <button id="copy-secret" class="btn btn-outline-secondary btn-sm">Copy Code</button>
                     </div>
                     
@@ -44,6 +54,12 @@
                             </ol>
                         </div>
                     </div>
+                    
+                    {% if registration %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Important:</strong> Keep this authenticator app configured as you will need to enter the code each time you login. 2FA is mandatory for all users on this platform.
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
                 
@@ -70,7 +86,11 @@
                     </div>
                     
                     <div class="d-grid gap-2 mb-3">
+                        {% if registration %}
+                        {{ form.submit(class="btn btn-primary", value="Complete Registration") }}
+                        {% else %}
                         {{ form.submit(class="btn btn-primary") }}
+                        {% endif %}
                     </div>
                     
                     {% if not setup %}
