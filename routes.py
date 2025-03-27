@@ -294,18 +294,12 @@ def setup_2fa_register():
                             app.logger.warning(f"Email {email} already exists")
                             flash('This email is already registered. Please use a different email or try logging in.', 'danger')
                         
-                        # Don't clear session yet, so user can try again
-                        # Regenerate QR code since it's not defined in this context
-                        new_qr_code = generate_qr_code(
-                            registration_data.get('username', 'user'),
-                            registration_data.get('otp_secret', '')
-                        )
-                        return render_template('auth/two_factor.html', 
-                                            title='Setup Two-Factor Authentication',
-                                            form=setup_form, 
-                                            qr_code=new_qr_code, 
-                                            setup=True,
-                                            registration=True)
+                        # Clear session data to let the user start fresh with a new username
+                        session.pop('registration_data', None)
+                        session.pop('registration_step', None)
+                        
+                        # Redirect back to the registration page to start again
+                        return redirect(url_for('register'))
                     
                     # User doesn't exist, proceed with creation
                     # But first, mark the session with a flag to prevent duplicate submissions
