@@ -36,6 +36,10 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     
+    # Check if user just completed registration and show a message
+    if request.args.get('registration_complete'):
+        flash('Registration successful! Your account is pending approval from an administrator.', 'success')
+    
     form = LoginForm()
     
     app.logger.info(f"Login attempt - Method: {request.method}")
@@ -196,6 +200,11 @@ def setup_2fa_register():
     """Dedicated route for 2FA setup during registration"""
     app.logger.info("2FA Registration setup route accessed")
     
+    # Check if we already completed registration (prevent going back)
+    if request.args.get('registration_complete'):
+        flash('Registration successful! Your account is pending approval from an administrator.', 'success')
+        return redirect(url_for('login'))
+    
     # Make sure we're in the right step
     if 'registration_step' not in session or session['registration_step'] != 'setup_2fa':
         app.logger.warning("2FA setup accessed without registration data")
@@ -299,7 +308,9 @@ def setup_2fa_register():
                     
                     # Use PRG pattern (Post-Redirect-Get) to avoid resubmission
                     flash('Registration successful! Your 2FA setup is complete. Your account is pending approval from an administrator.', 'success')
-                    return redirect(url_for('login'))
+                    
+                    # Redirect to login page with a special parameter to avoid hitting the 2FA setup again
+                    return redirect(url_for('login', registration_complete=1))
                 
                 except Exception as e:
                     app.logger.error(f"Error creating user: {str(e)}")
