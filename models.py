@@ -30,6 +30,10 @@ class User(UserMixin, db.Model):
                               primaryjoin="User.id==UserCourse.user_id",
                               secondaryjoin="Course.id==UserCourse.course_id",
                               backref='enrolled_users')
+    lesson_progress = db.relationship('UserLessonProgress',
+                                   backref='user',
+                                   lazy='dynamic',
+                                   cascade='all, delete-orphan')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -115,5 +119,21 @@ class Lesson(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationship with user progress
+    user_progress = db.relationship('UserLessonProgress', backref='lesson', lazy='dynamic', cascade='all, delete-orphan')
+    
     def __repr__(self):
         return f'<Lesson {self.title}>'
+
+
+class UserLessonProgress(db.Model):
+    __tablename__ = 'user_lesson_progress'
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'), primary_key=True)
+    status = db.Column(db.String(20), default='not_started')  # not_started, in_progress, completed
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    last_interaction = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<UserLessonProgress user_id={self.user_id} lesson_id={self.lesson_id} status={self.status}>'
