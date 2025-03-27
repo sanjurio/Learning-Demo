@@ -39,6 +39,8 @@ def login():
     # Check if user just completed registration and show a message
     if request.args.get('registration_complete'):
         flash('Registration successful! Your account is pending approval from an administrator.', 'success')
+        # Clear the user_created flag to allow new registrations
+        session.pop('user_created', None)
     
     form = LoginForm()
     
@@ -154,6 +156,9 @@ def register():
     app.logger.info("Registration route accessed")
     if current_user.is_authenticated:
         return redirect(url_for('index'))
+    
+    # Clear any previous user_created flag when starting a new registration
+    session.pop('user_created', None)
     
     # Handle initial user registration form
     form = RegistrationForm()
@@ -287,6 +292,12 @@ def setup_2fa_register():
                                             registration=True)
                     
                     # User doesn't exist, proceed with creation
+                    # But first, mark the session with a flag to prevent duplicate submissions
+                    if session.get('user_created'):
+                        app.logger.info("User creation already completed - redirecting to login")
+                        return redirect(url_for('login', registration_complete=1))
+                    
+                    # Create new user
                     user = User(
                         username=username,
                         email=email,
@@ -301,12 +312,15 @@ def setup_2fa_register():
                     db.session.commit()
                     app.logger.info(f"New user created: {user.username}, ID: {user.id}")
                     
-                    # Clear session data
-                    session.pop('registration_data', None)
-                    session.pop('registration_step', None)
+                    # Mark user as created in session to prevent duplicate submissions
+                    session['user_created'] = True
                     
                     # Use PRG pattern (Post-Redirect-Get) to avoid resubmission
                     flash('Registration successful! Your 2FA setup is complete. Your account is pending approval from an administrator.', 'success')
+                    
+                    # Clear registration data but keep user_created flag
+                    session.pop('registration_data', None)
+                    session.pop('registration_step', None)
                     
                     # Redirect to login page with a special parameter to avoid hitting the 2FA setup again
                     return redirect(url_for('login', registration_complete=1))
