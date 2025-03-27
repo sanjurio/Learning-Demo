@@ -25,7 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (form) {
                     // Small delay to allow user to see the completed code
                     setTimeout(() => {
-                        form.submit();
+                        // Use traditional form submit to avoid conflicts with button named 'submit'
+                        form.querySelector('button[type="submit"]').click();
                     }, 300);
                 }
             }

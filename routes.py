@@ -444,7 +444,11 @@ def admin_pending_users():
         return redirect(url_for('index'))
     
     pending_users = get_pending_users()
+    # Since we're using direct form inputs, we don't need to pass a form object
+    # But we'll keep it to maintain compatibility with the template
     form = UserApprovalForm()
+    
+    app.logger.info(f"Pending users: {len(pending_users) if pending_users else 0}")
     
     return render_template('admin/approve_users.html', title='Pending Users', 
                          pending_users=pending_users, form=form)
@@ -455,33 +459,34 @@ def admin_approve_user():
     if not current_user.is_admin:
         abort(403)
     
-    # Modified to handle form validation issues and add debugging
-    form = UserApprovalForm()
+    app.logger.info(f"Admin approve user form data: {request.form}")
     
-    # Debug logs
-    print(f"Form data: {request.form}")
-    print(f"Form validation: {form.validate()}")
-    
-    # Skip the validation to allow the action to proceed
-    # if form.validate_on_submit():
+    # Get data directly from form submission
     user_id = request.form.get('user_id')
     action = request.form.get('action')
     
-    print(f"Processing user_id: {user_id}, action: {action}")
+    app.logger.info(f"Processing user_id: {user_id}, action: {action}")
     
     if user_id and action:
-        if action == 'approve':
-            if approve_user(int(user_id), current_user.id):
-                flash('User has been approved.', 'success')
+        try:
+            user_id = int(user_id)
+            if action == 'approve':
+                if approve_user(user_id, current_user.id):
+                    flash('User has been approved successfully.', 'success')
+                else:
+                    flash('Error approving user. User may not exist.', 'danger')
+            elif action == 'reject':
+                if reject_user(user_id):
+                    flash('User has been rejected and removed.', 'success')
+                else:
+                    flash('Error rejecting user. User may not exist.', 'danger')
             else:
-                flash('Error approving user.', 'danger')
-        elif action == 'reject':
-            if reject_user(int(user_id)):
-                flash('User has been rejected.', 'success')
-            else:
-                flash('Error rejecting user.', 'danger')
+                flash('Invalid action specified.', 'danger')
+        except ValueError:
+            flash('Invalid user ID format.', 'danger')
+            app.logger.error(f"Invalid user ID format: {user_id}")
     else:
-        flash('Invalid form data. Please try again.', 'danger')
+        flash('Missing required form data. Please try again.', 'danger')
     
     return redirect(url_for('admin_pending_users'))
 

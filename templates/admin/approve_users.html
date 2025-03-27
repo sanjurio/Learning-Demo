@@ -37,7 +37,7 @@
                 
                 <div class="approval-actions">
                     <form method="post" action="{{ url_for('admin_approve_user') }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}" />
                         <input type="hidden" name="user_id" value="{{ user.id }}" />
                         <input type="hidden" name="action" value="approve" />
                         <button type="submit" class="btn btn-success">
@@ -46,7 +46,7 @@
                     </form>
                     
                     <form method="post" action="{{ url_for('admin_approve_user') }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}" />
                         <input type="hidden" name="user_id" value="{{ user.id }}" />
                         <input type="hidden" name="action" value="reject" />
                         <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to reject this user? This will permanently delete their account.')">
