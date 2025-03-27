@@ -149,3 +149,16 @@ pre::-webkit-scrollbar-track {
 .btn:focus {
   box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
 }
+
+/* Recommendations styling */
+.recommendation-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+}
+
+.course-card {
+  position: relative;
+  margin-bottom: 20px;
+}

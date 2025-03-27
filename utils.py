@@ -180,6 +180,60 @@ def get_user_interests_status(user_id):
     
     return result
 
+def get_recommended_courses(user, max_courses=3):
+    """Get course recommendations for a user based on their interests
+    
+    This function returns courses that:
+    1. The user has access to through their interests, but hasn't enrolled in yet
+    2. Related to the user's interests, sorted by relevance
+    """
+    if user.is_admin:
+        # For admins, recommend all courses they're not enrolled in
+        enrolled_course_ids = [uc.course_id for uc in UserCourse.query.filter_by(user_id=user.id).all()]
+        return Course.query.filter(~Course.id.in_(enrolled_course_ids) if enrolled_course_ids else True).limit(max_courses).all()
+    
+    # Get user interests with granted access
+    user_interests = UserInterest.query.filter_by(
+        user_id=user.id, 
+        access_granted=True
+    ).all()
+    interest_ids = [ui.interest_id for ui in user_interests]
+    
+    if not interest_ids:
+        return []
+    
+    # Get courses the user is already enrolled in
+    enrolled_course_ids = [uc.course_id for uc in UserCourse.query.filter_by(user_id=user.id).all()]
+    
+    # Find courses related to user's interests that they're not enrolled in yet
+    course_interests = CourseInterest.query.filter(
+        CourseInterest.interest_id.in_(interest_ids)
+    ).all()
+    
+    # Group course IDs by how many of the user's interests they match (for relevance scoring)
+    course_relevance = {}
+    for ci in course_interests:
+        if ci.course_id not in enrolled_course_ids:
+            course_relevance[ci.course_id] = course_relevance.get(ci.course_id, 0) + 1
+    
+    # Sort course IDs by relevance score (descending)
+    sorted_course_ids = sorted(course_relevance.keys(), key=lambda x: course_relevance[x], reverse=True)
+    
+    # Limit to maximum number of recommendations
+    sorted_course_ids = sorted_course_ids[:max_courses]
+    
+    if not sorted_course_ids:
+        return []
+    
+    # Fetch the courses in order of relevance
+    courses = []
+    for course_id in sorted_course_ids:
+        course = Course.query.get(course_id)
+        if course:
+            courses.append(course)
+    
+    return courses
+
 def setup_initial_data():
     """Set up initial data if database is empty"""
     try:

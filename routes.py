@@ -9,7 +9,7 @@ from forms import (LoginForm, RegistrationForm, TwoFactorForm, SetupTwoFactorFor
                   ForumTopicForm, ForumReplyForm)
 from utils import (generate_otp_secret, verify_totp, generate_qr_code, get_user_accessible_courses, 
                   get_pending_users, approve_user, reject_user, grant_interest_access, revoke_interest_access, 
-                  get_user_interests_status, user_can_access_course, setup_initial_data)
+                  get_user_interests_status, user_can_access_course, setup_initial_data, get_recommended_courses)
 from datetime import datetime
 
 # Initialize the database with some data when needed
@@ -250,8 +250,14 @@ def user_dashboard():
         flash('Your account is pending approval from an administrator.', 'warning')
         return redirect(url_for('index'))
     
+    # Get user's accessible courses
     courses = get_user_accessible_courses(current_user)
-    return render_template('user/dashboard.html', title='Dashboard', courses=courses)
+    
+    # Get personalized course recommendations based on user interests
+    recommended_courses = get_recommended_courses(current_user)
+    
+    return render_template('user/dashboard.html', title='Dashboard', 
+                          courses=courses, recommended_courses=recommended_courses)
 
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
