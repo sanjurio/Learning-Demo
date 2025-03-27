@@ -1,17 +1,23 @@
 /* Custom Styles for AI Learning Platform */
 
+/* Bootstrap Dark Theme Compatibility */
+body {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 /* 2FA Specific Styles */
 .token-input {
   letter-spacing: 4px;
   font-weight: bold;
   font-size: 1.2rem;
+  text-align: center;
 }
 
 /* Token countdown animation */
 @keyframes highlight {
-  0% { color: #fff; }
-  50% { color: #0dcaf0; }
-  100% { color: #fff; }
+  0% { color: rgba(255, 255, 255, 0.9); }
+  50% { color: var(--bs-info); }
+  100% { color: rgba(255, 255, 255, 0.9); }
 }
 
 #token-timer.highlight {
@@ -39,14 +45,14 @@
 .section-title {
   position: relative;
   margin-bottom: 1.5rem;
-  font-size: 1.8rem;
   padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .section-title::after {
   content: '';
   position: absolute;
-  bottom: 0;
+  bottom: -1px;
   left: 0;
   width: 50px;
   height: 3px;
@@ -56,13 +62,13 @@
 /* Interest and Category Tags */
 .tag {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.75rem;
   margin: 0.2rem;
   border-radius: 50px;
   font-size: 0.8rem;
   background-color: rgba(var(--bs-primary-rgb), 0.1);
   color: var(--bs-primary);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .tag:hover {
@@ -75,6 +81,8 @@
 pre {
   max-height: 400px;
   overflow-y: auto;
+  background-color: #212529 !important;
+  border-radius: 0.375rem;
 }
 
 pre::-webkit-scrollbar {
@@ -89,24 +97,6 @@ pre::-webkit-scrollbar-thumb {
 
 pre::-webkit-scrollbar-track {
   background-color: rgba(0, 0, 0, 0.1);
-}
-
-/* Table Responsive Behavior */
-.table-responsive {
-  overflow-x: auto;
-}
-
-@media (max-width: 768px) {
-  .table-responsive {
-    -webkit-overflow-scrolling: touch;
-  }
-}
-
-/* Lesson Navigation */
-.lesson-nav {
-  display: flex;
-  justify-content: space-between;
-  margin: 2rem 0;
 }
 
 /* Profile Picture */
@@ -135,4 +125,27 @@ pre::-webkit-scrollbar-track {
 .interest-item.selected {
   background-color: rgba(var(--bs-primary-rgb), 0.2);
   border-color: var(--bs-primary);
+}
+
+/* Footer Styling */
+.footer {
+  margin-top: 3rem;
+  padding: 2rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Table Styling for Dark Theme */
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Proper spacing for form elements */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+/* Button focus state */
+.btn:focus {
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
 }
