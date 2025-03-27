@@ -85,6 +85,7 @@ class Course(db.Model):
     
     # Relationships
     lessons = db.relationship('Lesson', backref='course', lazy='dynamic', cascade='all, delete-orphan')
+    forum_topics = db.relationship('ForumTopic', backref='course', lazy='dynamic')
     
     def __repr__(self):
         return f'<Course {self.title}>'
@@ -137,3 +138,38 @@ class UserLessonProgress(db.Model):
     
     def __repr__(self):
         return f'<UserLessonProgress user_id={self.user_id} lesson_id={self.lesson_id} status={self.status}>'
+
+
+class ForumTopic(db.Model):
+    __tablename__ = 'forum_topics'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))  # Null means general forum
+    pinned = db.Column(db.Boolean, default=False)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('forum_topics', lazy='dynamic'))
+    replies = db.relationship('ForumReply', backref='topic', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<ForumTopic {self.title}>'
+
+
+class ForumReply(db.Model):
+    __tablename__ = 'forum_replies'
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    topic_id = db.Column(db.Integer, db.ForeignKey('forum_topics.id'), nullable=False)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('forum_replies', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<ForumReply {self.id} by user {self.user_id}>'

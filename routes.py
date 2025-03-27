@@ -2,9 +2,11 @@ from flask import render_template, flash, redirect, url_for, request, abort, ses
 from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlparse
 from app import app, db
-from models import User, Course, Lesson, Interest, UserInterest, CourseInterest, UserCourse
+from models import (User, Course, Lesson, Interest, UserInterest, CourseInterest, UserCourse,
+                 ForumTopic, ForumReply, UserLessonProgress)
 from forms import (LoginForm, RegistrationForm, TwoFactorForm, SetupTwoFactorForm, InterestSelectionForm, 
-                  UserApprovalForm, CourseForm, LessonForm, InterestForm, UserInterestAccessForm, ProfileForm)
+                  UserApprovalForm, CourseForm, LessonForm, InterestForm, UserInterestAccessForm, ProfileForm,
+                  ForumTopicForm, ForumReplyForm)
 from utils import (generate_otp_secret, verify_totp, generate_qr_code, get_user_accessible_courses, 
                   get_pending_users, approve_user, reject_user, grant_interest_access, revoke_interest_access, 
                   get_user_interests_status, user_can_access_course, setup_initial_data)
@@ -693,6 +695,130 @@ def admin_update_user_interest():
                 flash('Error revoking access.', 'danger')
     
     return redirect(url_for('admin_user_interests', user_id=form.user_id.data))
+
+# Forum routes
+@app.route('/forum')
+@login_required
+def forum_index():
+    if not current_user.is_approved:
+        flash('Your account is pending approval from an administrator.', 'warning')
+        return redirect(url_for('index'))
+    
+    # Get all general forum topics (where course_id is None)
+    topics = ForumTopic.query.filter_by(course_id=None).order_by(
+        ForumTopic.pinned.desc(),
+        ForumTopic.updated_at.desc()
+    ).all()
+    
+    form = ForumTopicForm()
+    return render_template('forum/index.html', title='General Forum', 
+                         topics=topics, form=form, is_general=True)
+
+@app.route('/forum/topic/<int:topic_id>', methods=['GET', 'POST'])
+@login_required
+def forum_topic(topic_id):
+    if not current_user.is_approved:
+        flash('Your account is pending approval from an administrator.', 'warning')
+        return redirect(url_for('index'))
+    
+    topic = ForumTopic.query.get_or_404(topic_id)
+    
+    # If course-specific topic, check if user has access to the course
+    if topic.course_id and not (current_user.is_admin or user_can_access_course(current_user, topic.course)):
+        flash('You do not have access to this forum topic.', 'danger')
+        return redirect(url_for('forum_index'))
+    
+    replies = ForumReply.query.filter_by(topic_id=topic_id).order_by(
+        ForumReply.created_at.asc()
+    ).all()
+    
+    form = ForumReplyForm()
+    if form.validate_on_submit():
+        reply = ForumReply(
+            content=form.content.data,
+            user_id=current_user.id,
+            topic_id=topic_id
+        )
+        db.session.add(reply)
+        # Update the topic's updated_at timestamp
+        topic.updated_at = datetime.utcnow()
+        db.session.commit()
+        flash('Your reply has been posted.', 'success')
+        return redirect(url_for('forum_topic', topic_id=topic_id))
+    
+    return render_template('forum/topic.html', title=topic.title, 
+                         topic=topic, replies=replies, form=form)
+
+@app.route('/forum/new', methods=['GET', 'POST'])
+@login_required
+def forum_new_topic():
+    if not current_user.is_approved:
+        flash('Your account is pending approval from an administrator.', 'warning')
+        return redirect(url_for('index'))
+    
+    form = ForumTopicForm()
+    
+    # If coming from a course page, pre-fill the course ID
+    course_id = request.args.get('course_id', None)
+    if course_id:
+        course = Course.query.get_or_404(int(course_id))
+        if not (current_user.is_admin or user_can_access_course(current_user, course)):
+            flash('You do not have access to create topics in this course forum.', 'danger')
+            return redirect(url_for('forum_index'))
+    
+    if form.validate_on_submit():
+        topic = ForumTopic(
+            title=form.title.data,
+            content=form.content.data,
+            user_id=current_user.id
+        )
+        
+        if form.course_id.data:
+            # Ensure the user has access to the course
+            course_id = int(form.course_id.data)
+            course = Course.query.get(course_id)
+            if course and (current_user.is_admin or user_can_access_course(current_user, course)):
+                topic.course_id = course_id
+            else:
+                flash('You do not have access to create topics in this course forum.', 'danger')
+                return redirect(url_for('forum_index'))
+        
+        db.session.add(topic)
+        db.session.commit()
+        flash('Your topic has been created.', 'success')
+        
+        if topic.course_id:
+            return redirect(url_for('course_forum', course_id=topic.course_id))
+        else:
+            return redirect(url_for('forum_index'))
+    
+    return render_template('forum/new_topic.html', title='New Forum Topic', 
+                         form=form, course_id=course_id)
+
+@app.route('/course/<int:course_id>/forum')
+@login_required
+def course_forum(course_id):
+    if not current_user.is_approved:
+        flash('Your account is pending approval from an administrator.', 'warning')
+        return redirect(url_for('index'))
+    
+    course = Course.query.get_or_404(course_id)
+    
+    # Check if the user has access to this course
+    if not (current_user.is_admin or user_can_access_course(current_user, course)):
+        flash('You do not have access to this course forum.', 'danger')
+        return redirect(url_for('forum_index'))
+    
+    topics = ForumTopic.query.filter_by(course_id=course_id).order_by(
+        ForumTopic.pinned.desc(),
+        ForumTopic.updated_at.desc()
+    ).all()
+    
+    form = ForumTopicForm()
+    form.course_id.data = course_id
+    
+    return render_template('forum/course_forum.html', title=f'{course.title} - Forum', 
+                         course=course, topics=topics, form=form)
 
 # Error handlers
 @app.errorhandler(404)

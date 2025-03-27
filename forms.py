@@ -105,3 +105,24 @@ class ProfileForm(FlaskForm):
         EqualTo('new_password', message='Passwords must match')
     ])
     submit = SubmitField('Update Profile')
+
+
+class ForumTopicForm(FlaskForm):
+    title = StringField('Title', validators=[
+        DataRequired(),
+        Length(min=5, max=200, message='Title must be between 5 and 200 characters')
+    ])
+    content = TextAreaField('Content', validators=[
+        DataRequired(),
+        Length(min=10, message='Content must be at least 10 characters')
+    ])
+    course_id = HiddenField('Course ID')
+    submit = SubmitField('Post Topic')
+
+
+class ForumReplyForm(FlaskForm):
+    content = TextAreaField('Reply', validators=[
+        DataRequired(),
+        Length(min=2, message='Reply must be at least 2 characters')
+    ])
+    submit = SubmitField('Post Reply')

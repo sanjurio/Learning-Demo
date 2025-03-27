@@ -53,6 +53,7 @@
                 <h4>Quick Links</h4>
                 <ul>
                     <li><a href="{{ url_for('user_interests') }}">Manage your interests</a></li>
+                    <li><a href="{{ url_for('forum_index') }}">Join the discussion in the General Forum</a></li>
                     <li><a href="{{ url_for('profile') }}">Update your profile</a></li>
                     {% if not current_user.is_2fa_enabled %}
                     <li><a href="{{ url_for('setup_2fa') }}">Enable Two-Factor Authentication</a></li>
