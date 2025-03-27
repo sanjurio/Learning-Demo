@@ -172,6 +172,10 @@ def register():
     if request.method == 'POST' and 'registration_step' not in session:
         app.logger.info("Registration POST: Processing initial form submission")
         
+        # Log form data for debugging
+        app.logger.info(f"Form data: {request.form}")
+        app.logger.info(f"Form validation status: {form.validate_on_submit()}")
+        
         if not form.validate_on_submit():
             app.logger.warning(f"Registration form validation failed: {form.errors}")
             return render_template('auth/register.html', title='Register', form=form)
@@ -194,11 +198,23 @@ def register():
         # Redirect to 2FA setup page to avoid form resubmission issues
         return redirect(url_for('setup_2fa_register'))
     
-    # Step 3: Handle 2FA verification (this should now be handled by setup_2fa_register)
-    # This code should not be reached due to the redirect above
-    app.logger.error("Registration route: Unexpected flow - should have redirected")
-    flash('An error occurred during registration. Please try again.', 'danger')
-    return redirect(url_for('register'))
+    # If we reach here, it means there was a POST request but the registration_step is already in session
+    # or another condition wasn't met correctly. Let's handle this case more gracefully.
+    if request.method == 'POST':
+        app.logger.info("Registration POST: Form processing outside of normal flow")
+        app.logger.info(f"Session keys: {list(session.keys())}")
+        
+        # If there's registration data and setup is in progress, redirect to 2FA setup
+        if 'registration_data' in session and session.get('registration_step') == 'setup_2fa':
+            app.logger.info("Registration in progress, redirecting to 2FA setup")
+            return redirect(url_for('setup_2fa_register'))
+        
+        # Otherwise, clear any partial registration data and restart
+        for key in ['registration_data', 'registration_step', 'user_created']:
+            session.pop(key, None)
+        
+        flash('There was an issue with your registration. Please try again.', 'warning')
+        return render_template('auth/register.html', title='Register', form=form)
 
 @app.route('/register/setup-2fa', methods=['GET', 'POST'])
 def setup_2fa_register():
