@@ -163,31 +163,46 @@ def register():
         # Get stored registration data
         registration_data = session.get('registration_data', {})
         
-        if setup_form.validate_on_submit():
-            # Verify the OTP code
-            if verify_totp(registration_data.get('otp_secret'), setup_form.token.data):
-                # Create the new user
-                user = User(
-                    username=registration_data.get('username'),
-                    email=registration_data.get('email'),
-                    is_approved=False,  # Requires admin approval
-                    otp_secret=registration_data.get('otp_secret'),
-                    is_2fa_enabled=True  # 2FA is mandatory
-                )
-                user.set_password(registration_data.get('password'))
-                
-                # Save to database
-                db.session.add(user)
-                db.session.commit()
-                
-                # Clear session data
-                session.pop('registration_data', None)
-                session.pop('registration_step', None)
-                
-                flash('Registration successful! Your 2FA setup is complete. Your account is pending approval from an administrator.', 'success')
-                return redirect(url_for('login'))
+        # Debug 
+        print(f"Registration data from session: {registration_data}")
+        print(f"Form validation: {setup_form.validate_on_submit()}")
+        print(f"Form data: {request.form}")
+        
+        if request.method == 'POST':
+            token = request.form.get('token')
+            print(f"Token from form: {token}")
+            
+            if token and len(token) == 6:
+                # Verify the OTP code
+                if verify_totp(registration_data.get('otp_secret'), token):
+                    print("TOTP verification successful")
+                    # Create the new user
+                    user = User(
+                        username=registration_data.get('username'),
+                        email=registration_data.get('email'),
+                        is_approved=False,  # Requires admin approval
+                        otp_secret=registration_data.get('otp_secret'),
+                        is_2fa_enabled=True  # 2FA is mandatory
+                    )
+                    user.set_password(registration_data.get('password'))
+                    
+                    # Save to database
+                    db.session.add(user)
+                    db.session.commit()
+                    print(f"New user created: {user.username}, ID: {user.id}")
+                    
+                    # Clear session data
+                    session.pop('registration_data', None)
+                    session.pop('registration_step', None)
+                    
+                    flash('Registration successful! Your 2FA setup is complete. Your account is pending approval from an administrator.', 'success')
+                    return redirect(url_for('login'))
+                else:
+                    print("TOTP verification failed")
+                    flash('Invalid authentication code. Please try again.', 'danger')
             else:
-                flash('Invalid authentication code. Please try again.', 'danger')
+                print(f"Invalid token format: {token}")
+                flash('Please enter a valid 6-digit authentication code.', 'danger')
         
         # Show 2FA setup page again if code validation failed
         qr_code = generate_qr_code(

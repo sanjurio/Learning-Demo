@@ -33,13 +33,15 @@
                     <p>Or manually enter this code in your app:</p>
                     <div class="d-flex align-items-center justify-content-center mb-3">
                         <div class="border px-3 py-2 rounded bg-dark me-2" id="secret-key">
-                            {% if registration %}
+                            {% if registration and session.registration_data %}
                             {{ session.registration_data.otp_secret }}
-                            {% else %}
+                            {% elif session.otp_secret %}
                             {{ session.otp_secret }}
+                            {% else %}
+                            <span class="text-danger">Error: Secret key not found</span>
                             {% endif %}
                         </div>
-                        <button id="copy-secret" class="btn btn-outline-secondary btn-sm">Copy Code</button>
+                        <button type="button" id="copy-secret" class="btn btn-outline-secondary btn-sm">Copy Code</button>
                     </div>
                     
                     <div class="card mt-3 mb-4">
