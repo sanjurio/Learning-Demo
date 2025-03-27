@@ -205,17 +205,16 @@ def setup_2fa_register():
         flash('Registration successful! Your account is pending approval from an administrator.', 'success')
         return redirect(url_for('login'))
     
-    # Make sure we're in the right step
+    # Check if this is direct access without proper registration flow
     if 'registration_step' not in session or session['registration_step'] != 'setup_2fa':
-        app.logger.warning("2FA setup accessed without registration data")
-        flash('Registration information missing. Please start again.', 'warning')
+        # Just redirect silently without warning message
+        app.logger.info("Redirecting to registration page - direct 2FA setup access")
         return redirect(url_for('register'))
     
     # Get registration data from session
     registration_data = session.get('registration_data', {})
     if not registration_data:
-        app.logger.error("No registration data in session")
-        flash('Registration information missing. Please try again.', 'danger')
+        app.logger.info("No registration data in session, redirecting to registration page")
         return redirect(url_for('register'))
     
     setup_form = SetupTwoFactorForm()
