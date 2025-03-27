@@ -91,9 +91,17 @@
                     
                     <div class="d-grid gap-2 mb-3">
                         {% if registration %}
-                        <button type="submit" class="btn btn-primary">Complete Registration</button>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-check-circle me-2"></i>Complete Registration
+                        </button>
+                        <div class="alert alert-info small mt-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Enter the 6-digit code from your authenticator app and click the button above.
+                        </div>
                         {% else %}
-                        <button type="submit" class="btn btn-primary">Verify Code</button>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-shield-alt me-2"></i>Verify Code
+                        </button>
                         {% endif %}
                     </div>
                     

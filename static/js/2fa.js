@@ -18,19 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // Auto-submit form when 6 digits are entered
-        tokenInput.addEventListener('keyup', function() {
-            if (this.value.length === 6) {
-                const form = this.closest('form');
-                if (form) {
-                    // Small delay to allow user to see the completed code
-                    setTimeout(() => {
-                        // Use traditional form submit to avoid conflicts with button named 'submit'
-                        form.querySelector('button[type="submit"]').click();
-                    }, 300);
-                }
-            }
-        });
+        // Removed auto-submit functionality to prevent form resubmission issues
+        // Now the user must click the submit button manually
     }
     
     // Countdown timer for token refresh (tokens typically refresh every 30 seconds)
