@@ -90,32 +90,58 @@ def login():
 
 @app.route('/two-factor', methods=['GET', 'POST'])
 def two_factor_auth():
-    if current_user.is_authenticated or 'user_id_for_2fa' not in session:
+    app.logger.info("2FA authentication route accessed")
+    
+    if current_user.is_authenticated:
+        app.logger.info("User already authenticated, redirecting")
         return redirect(url_for('index'))
+        
+    if 'user_id_for_2fa' not in session:
+        app.logger.warning("2FA access without user_id_for_2fa in session")
+        flash('Authentication error. Please log in again.', 'danger')
+        return redirect(url_for('login'))
+    
+    user_id = session.get('user_id_for_2fa')
+    app.logger.info(f"Processing 2FA for user_id: {user_id}")
     
     form = TwoFactorForm()
     
     if form.validate_on_submit():
-        user = User.query.get(session['user_id_for_2fa'])
+        app.logger.info(f"2FA form submitted for user_id: {user_id}")
+        user = User.query.get(user_id)
         
         if not user:
+            app.logger.error(f"User not found for 2FA, user_id: {user_id}")
             session.pop('user_id_for_2fa', None)
             session.pop('remember_me', None)
-            flash('Authentication error.', 'danger')
+            flash('Authentication error. User not found.', 'danger')
             return redirect(url_for('login'))
         
-        if verify_totp(user.otp_secret, form.token.data):
+        token = form.token.data
+        # Enhanced validation
+        if not token or not token.isdigit() or len(token) != 6:
+            app.logger.warning(f"Invalid token format: {token}")
+            flash('Authentication code must be 6 digits.', 'danger')
+            return render_template('auth/two_factor.html', title='Two-Factor Authentication', form=form)
+            
+        if verify_totp(user.otp_secret, token):
+            app.logger.info(f"Successful 2FA verification for user: {user.username}")
             login_user(user, remember=session.get('remember_me', False))
+            
+            # Clear session data
             session.pop('user_id_for_2fa', None)
             session.pop('remember_me', None)
             
+            # Redirect to appropriate page
             next_page = request.args.get('next')
             if not next_page or urlparse(next_page).netloc != '':
-                next_page = url_for('index')
+                next_page = url_for('user_dashboard')
             
+            flash('Login successful!', 'success')
             return redirect(next_page)
         else:
-            flash('Invalid authentication code.', 'danger')
+            app.logger.warning(f"Invalid 2FA token provided for user: {user.username}")
+            flash('Invalid authentication code. Please try again.', 'danger')
     
     return render_template('auth/two_factor.html', title='Two-Factor Authentication', form=form)
 
@@ -206,6 +232,12 @@ def setup_2fa_register():
         app.logger.info(f"2FA setup verification attempt: {request.form}")
         token = request.form.get('token')
         
+        # Create QR code - needed in case we have to redisplay the form
+        qr_code = generate_qr_code(
+            registration_data.get('username', 'user'),
+            registration_data.get('otp_secret', '')
+        )
+        
         if not token or len(token) != 6:
             app.logger.warning(f"Invalid token format: {token}")
             flash('Please enter a valid 6-digit authentication code.', 'danger')
@@ -215,11 +247,41 @@ def setup_2fa_register():
             if verify_totp(otp_secret, token):
                 app.logger.info("2FA verification successful - creating user")
                 
-                # Create the new user
+                # Create the new user, but first check if it already exists
                 try:
+                    username = registration_data.get('username')
+                    email = registration_data.get('email')
+                    
+                    # Check if user already exists before creating
+                    existing_user = User.query.filter(
+                        (User.username == username) | (User.email == email)
+                    ).first()
+                    
+                    if existing_user:
+                        if existing_user.username == username:
+                            app.logger.warning(f"Username {username} already exists")
+                            flash('This username is already taken. Please try a different one.', 'danger')
+                        elif existing_user.email == email:
+                            app.logger.warning(f"Email {email} already exists")
+                            flash('This email is already registered. Please use a different email or try logging in.', 'danger')
+                        
+                        # Don't clear session yet, so user can try again
+                        # Regenerate QR code since it's not defined in this context
+                        new_qr_code = generate_qr_code(
+                            registration_data.get('username', 'user'),
+                            registration_data.get('otp_secret', '')
+                        )
+                        return render_template('auth/two_factor.html', 
+                                            title='Setup Two-Factor Authentication',
+                                            form=setup_form, 
+                                            qr_code=new_qr_code, 
+                                            setup=True,
+                                            registration=True)
+                    
+                    # User doesn't exist, proceed with creation
                     user = User(
-                        username=registration_data.get('username'),
-                        email=registration_data.get('email'),
+                        username=username,
+                        email=email,
                         is_approved=False,  # Requires admin approval
                         otp_secret=otp_secret,
                         is_2fa_enabled=True  # 2FA is mandatory
@@ -235,12 +297,20 @@ def setup_2fa_register():
                     session.pop('registration_data', None)
                     session.pop('registration_step', None)
                     
+                    # Use PRG pattern (Post-Redirect-Get) to avoid resubmission
                     flash('Registration successful! Your 2FA setup is complete. Your account is pending approval from an administrator.', 'success')
                     return redirect(url_for('login'))
+                
                 except Exception as e:
                     app.logger.error(f"Error creating user: {str(e)}")
                     db.session.rollback()
-                    flash('An error occurred during account creation. Please try again.', 'danger')
+                    
+                    # Clear session data on critical error to force restart
+                    session.pop('registration_data', None)
+                    session.pop('registration_step', None)
+                    
+                    flash('An error occurred during account creation. Please try again with different information.', 'danger')
+                    return redirect(url_for('register'))
             else:
                 app.logger.warning("2FA token verification failed")
                 flash('Invalid authentication code. Please try again.', 'danger')

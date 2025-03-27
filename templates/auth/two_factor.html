@@ -69,8 +69,10 @@
                     {{ form.hidden_tag() }}
                     
                     <div class="mb-3">
-                        {{ form.token.label(class="form-label") }}
-                        {{ form.token(class="form-control token-input text-center", placeholder="Enter 6-digit code", autocomplete="off", inputmode="numeric", pattern="[0-9]*") }}
+                        <label for="token" class="form-label">Authentication Code</label>
+                        <input type="text" id="token" name="token" class="form-control token-input text-center" 
+                               placeholder="Enter 6-digit code" autocomplete="off" inputmode="numeric" 
+                               pattern="[0-9]*" maxlength="6" required>
                         <div class="form-text text-danger">
                             {% for error in form.token.errors %}
                                 {{ error }}
