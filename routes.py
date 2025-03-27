@@ -157,8 +157,11 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     
-    # Clear any previous user_created flag when starting a new registration
-    session.pop('user_created', None)
+    # Clear all registration-related session data when starting a new registration
+    if request.method == 'GET':
+        app.logger.info("Registration GET: Clearing all registration session data")
+        for key in ['user_created', 'registration_data', 'registration_step', 'otp_secret']:
+            session.pop(key, None)
     
     # Handle initial user registration form
     form = RegistrationForm()
@@ -240,14 +243,38 @@ def setup_2fa_register():
     
     setup_form = SetupTwoFactorForm()
     
-    # For GET requests, show the QR code
+    # For GET requests, check username/email availability first, then show the QR code
     if request.method == 'GET':
-        # Generate QR code
+        # Check if username or email already exists before proceeding
+        username = registration_data.get('username')
+        email = registration_data.get('email')
+        
+        existing_user = User.query.filter(
+            (User.username == username) | (User.email == email)
+        ).first()
+        
+        if existing_user:
+            # Username or email already exists, clear session and redirect back to registration
+            if existing_user.username == username:
+                app.logger.warning(f"Username {username} already exists during 2FA setup")
+                flash('This username is already taken. Please try a different one.', 'danger')
+            elif existing_user.email == email:
+                app.logger.warning(f"Email {email} already exists during 2FA setup")
+                flash('This email is already registered. Please use a different email or try logging in.', 'danger')
+            
+            # Clear session data to let the user start fresh
+            session.pop('registration_data', None)
+            session.pop('registration_step', None)
+            
+            # Redirect back to the registration page to start again
+            return redirect(url_for('register'))
+        
+        # If we get here, username and email are available, proceed with QR code
         qr_code = generate_qr_code(
-            registration_data.get('username', 'user'),
+            username,
             registration_data.get('otp_secret', '')
         )
-        app.logger.info(f"Showing 2FA setup QR code for {registration_data.get('username')}")
+        app.logger.info(f"Showing 2FA setup QR code for {username}")
         
         return render_template('auth/two_factor.html', 
                             title='Setup Two-Factor Authentication',
