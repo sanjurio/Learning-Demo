@@ -121,67 +121,107 @@ def two_factor_auth():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    app.logger.info("Registration route accessed")
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     
-    # Initialize form and 2FA setup
+    # Handle initial user registration form
     form = RegistrationForm()
     
-    # First step: collect user details
-    if request.method == 'GET' or not form.validate_on_submit():
+    # Step 1: Show registration form for initial GET request
+    if request.method == 'GET':
+        app.logger.info("Registration GET: Showing registration form")
         return render_template('auth/register.html', title='Register', form=form)
     
-    # Second step: generate and display OTP QR code
-    if form.validate_on_submit() and 'registration_step' not in session:
-        # Generate OTP secret
+    # Step 2: Process form submission
+    if request.method == 'POST' and 'registration_step' not in session:
+        app.logger.info("Registration POST: Processing initial form submission")
+        
+        if not form.validate_on_submit():
+            app.logger.warning(f"Registration form validation failed: {form.errors}")
+            return render_template('auth/register.html', title='Register', form=form)
+        
+        # Form is valid, proceed to 2FA setup
         otp_secret = generate_otp_secret()
         
-        # Store data in session for the next step
-        session['registration_data'] = {
+        # Store registration data in session
+        registration_data = {
             'username': form.username.data,
             'email': form.email.data,
             'password': form.password.data,
             'otp_secret': otp_secret
         }
+        session['registration_data'] = registration_data
         session['registration_step'] = 'setup_2fa'
         
-        # Generate QR code for 2FA setup
-        qr_code = generate_qr_code(form.username.data, otp_secret)
+        app.logger.info(f"Registration: 2FA setup for {registration_data['username']}, redirecting")
         
-        # Show 2FA setup page
-        setup_form = SetupTwoFactorForm()
-        return render_template('auth/two_factor.html', 
-                               title='Setup Two-Factor Authentication',
-                               form=setup_form, 
-                               qr_code=qr_code, 
-                               setup=True,
-                               registration=True)
+        # Redirect to 2FA setup page to avoid form resubmission issues
+        return redirect(url_for('setup_2fa_register'))
     
-    # Final step: verify OTP and create account
-    if 'registration_step' in session and session['registration_step'] == 'setup_2fa':
-        setup_form = SetupTwoFactorForm()
-        # Get stored registration data
-        registration_data = session.get('registration_data', {})
+    # Step 3: Handle 2FA verification (this should now be handled by setup_2fa_register)
+    # This code should not be reached due to the redirect above
+    app.logger.error("Registration route: Unexpected flow - should have redirected")
+    flash('An error occurred during registration. Please try again.', 'danger')
+    return redirect(url_for('register'))
+
+@app.route('/register/setup-2fa', methods=['GET', 'POST'])
+def setup_2fa_register():
+    """Dedicated route for 2FA setup during registration"""
+    app.logger.info("2FA Registration setup route accessed")
+    
+    # Make sure we're in the right step
+    if 'registration_step' not in session or session['registration_step'] != 'setup_2fa':
+        app.logger.warning("2FA setup accessed without registration data")
+        flash('Registration information missing. Please start again.', 'warning')
+        return redirect(url_for('register'))
+    
+    # Get registration data from session
+    registration_data = session.get('registration_data', {})
+    if not registration_data:
+        app.logger.error("No registration data in session")
+        flash('Registration information missing. Please try again.', 'danger')
+        return redirect(url_for('register'))
+    
+    setup_form = SetupTwoFactorForm()
+    
+    # For GET requests, show the QR code
+    if request.method == 'GET':
+        # Generate QR code
+        qr_code = generate_qr_code(
+            registration_data.get('username', 'user'),
+            registration_data.get('otp_secret', '')
+        )
+        app.logger.info(f"Showing 2FA setup QR code for {registration_data.get('username')}")
         
-        # Debug 
-        print(f"Registration data from session: {registration_data}")
-        print(f"Form validation: {setup_form.validate_on_submit()}")
-        print(f"Form data: {request.form}")
+        return render_template('auth/two_factor.html', 
+                            title='Setup Two-Factor Authentication',
+                            form=setup_form, 
+                            qr_code=qr_code, 
+                            setup=True,
+                            registration=True)
+    
+    # For POST requests, verify the token
+    if request.method == 'POST':
+        app.logger.info(f"2FA setup verification attempt: {request.form}")
+        token = request.form.get('token')
         
-        if request.method == 'POST':
-            token = request.form.get('token')
-            print(f"Token from form: {token}")
-            
-            if token and len(token) == 6:
-                # Verify the OTP code
-                if verify_totp(registration_data.get('otp_secret'), token):
-                    print("TOTP verification successful")
-                    # Create the new user
+        if not token or len(token) != 6:
+            app.logger.warning(f"Invalid token format: {token}")
+            flash('Please enter a valid 6-digit authentication code.', 'danger')
+        else:
+            # Verify token
+            otp_secret = registration_data.get('otp_secret')
+            if verify_totp(otp_secret, token):
+                app.logger.info("2FA verification successful - creating user")
+                
+                # Create the new user
+                try:
                     user = User(
                         username=registration_data.get('username'),
                         email=registration_data.get('email'),
                         is_approved=False,  # Requires admin approval
-                        otp_secret=registration_data.get('otp_secret'),
+                        otp_secret=otp_secret,
                         is_2fa_enabled=True  # 2FA is mandatory
                     )
                     user.set_password(registration_data.get('password'))
@@ -189,7 +229,7 @@ def register():
                     # Save to database
                     db.session.add(user)
                     db.session.commit()
-                    print(f"New user created: {user.username}, ID: {user.id}")
+                    app.logger.info(f"New user created: {user.username}, ID: {user.id}")
                     
                     # Clear session data
                     session.pop('registration_data', None)
@@ -197,26 +237,28 @@ def register():
                     
                     flash('Registration successful! Your 2FA setup is complete. Your account is pending approval from an administrator.', 'success')
                     return redirect(url_for('login'))
-                else:
-                    print("TOTP verification failed")
-                    flash('Invalid authentication code. Please try again.', 'danger')
+                except Exception as e:
+                    app.logger.error(f"Error creating user: {str(e)}")
+                    db.session.rollback()
+                    flash('An error occurred during account creation. Please try again.', 'danger')
             else:
-                print(f"Invalid token format: {token}")
-                flash('Please enter a valid 6-digit authentication code.', 'danger')
+                app.logger.warning("2FA token verification failed")
+                flash('Invalid authentication code. Please try again.', 'danger')
         
-        # Show 2FA setup page again if code validation failed
+        # If we get here, there was an error - regenerate QR code and show form again
         qr_code = generate_qr_code(
-            registration_data.get('username'),
-            registration_data.get('otp_secret')
+            registration_data.get('username', 'user'),
+            registration_data.get('otp_secret', '')
         )
         return render_template('auth/two_factor.html', 
-                               title='Setup Two-Factor Authentication',
-                               form=setup_form, 
-                               qr_code=qr_code, 
-                               setup=True,
-                               registration=True)
+                            title='Setup Two-Factor Authentication',
+                            form=setup_form, 
+                            qr_code=qr_code, 
+                            setup=True,
+                            registration=True)
     
-    # Fallback
+    # Fallback - make sure to create a form object to avoid template errors
+    form = RegistrationForm()
     return render_template('auth/register.html', title='Register', form=form)
 
 @app.route('/logout')

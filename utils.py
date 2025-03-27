@@ -20,21 +20,25 @@ def get_totp_uri(username, secret, issuer_name="AI Learning Platform"):
     )
 
 def generate_qr_code(username, secret):
-    """Generate QR code for 2FA setup"""
+    """Generate QR code for 2FA setup with optimized settings"""
     uri = get_totp_uri(username, secret)
+    
+    # Use smaller QR code settings for faster generation
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
+        box_size=6,  # Smaller box size
+        border=2,    # Smaller border
     )
     qr.add_data(uri)
     qr.make(fit=True)
+    
+    # Use PIL/Pillow for image creation
     img = qr.make_image(fill_color="black", back_color="white")
     
     # Save QR code to bytes
     buffered = io.BytesIO()
-    img.save(buffered)
+    img.save(buffered, format="PNG", optimize=True, compress_level=9)
     img_str = base64.b64encode(buffered.getvalue()).decode()
     return f"data:image/png;base64,{img_str}"
 
