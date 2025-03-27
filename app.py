@@ -8,6 +8,8 @@ from flask_login import LoginManager
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.debug("Starting application")
 
 # Create base class for SQLAlchemy models
 class Base(DeclarativeBase):
@@ -28,6 +30,9 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Print debug info
+logger.debug(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+
 # Initialize the app with the extension
 db.init_app(app)
 
@@ -44,9 +49,11 @@ with app.app_context():
     
     # Create all database tables
     db.create_all()
+    logger.debug("Database tables created")
     
     # Import routes after database is set up
     import routes  # Import routes at the end to avoid circular imports
+    logger.debug("Routes imported successfully")
 
 # Context processors
 @app.context_processor
