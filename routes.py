@@ -66,12 +66,22 @@ def login():
             flash('Your account is pending approval from an administrator.', 'warning')
             return render_template('auth/login.html', title='Sign In', form=form)
         
+        # Special case for admin: bypass 2FA
+        if user.is_admin:
+            login_user(user, remember=form.remember_me.data)
+            next_page = request.args.get('next')
+            if not next_page or urlparse(next_page).netloc != '':
+                next_page = url_for('index')
+            
+            flash('Welcome, Administrator!', 'success')
+            return redirect(next_page)
+        
         # Check if user has 2FA configured
         if not user.otp_secret:
             flash('Your account is missing 2FA configuration. Please contact an administrator.', 'danger')
             return render_template('auth/login.html', title='Sign In', form=form)
         
-        # Store user ID in session for the 2FA step (2FA is mandatory for all users)
+        # Store user ID in session for the 2FA step (2FA is mandatory for non-admin users)
         session['user_id_for_2fa'] = user.id
         session['remember_me'] = form.remember_me.data
         return redirect(url_for('two_factor_auth'))

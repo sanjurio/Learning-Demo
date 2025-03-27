@@ -248,17 +248,18 @@ def setup_initial_data():
                 
         admin = User.query.filter_by(is_admin=True).first()
         if not admin:
-            # Create admin user
+            # Create admin user (special case - bypass 2FA for admin)
             admin = User(
                 username='admin',
                 email='admin@example.com',
                 is_admin=True,
-                is_approved=True
+                is_approved=True,
+                is_2fa_enabled=False  # Admin doesn't need 2FA
             )
             admin.set_password('Admin123')
             db.session.add(admin)
             db.session.commit()
-            print("Admin user created successfully")
+            print("Admin user created successfully without 2FA")
             
             # Create some interests
             interests = [
