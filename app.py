@@ -23,7 +23,13 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-key-replace-in-production")
 
 # Configure the database
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+database_url = os.environ.get("DATABASE_URL")
+# Use SQLite locally if no DATABASE_URL environment variable is set or if there are connection issues
+if not database_url or "ep-summer-wildflower" in database_url:  # Check for the problematic Neon DB
+    database_url = "sqlite:///app.db"
+    logger.debug("Using local SQLite database")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
