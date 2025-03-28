@@ -27,7 +27,8 @@
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="topicActions">
                         {% if current_user.is_admin %}
                         <li>
-                            <form action="#" method="post" class="d-inline">
+                            <form action="{{ url_for('forum_topic', topic_id=topic.id) }}" method="post" class="d-inline">
+                                {{ form.hidden_tag() }}
                                 <input type="hidden" name="topic_id" value="{{ topic.id }}">
                                 <button type="submit" name="action" value="toggle_pin" class="dropdown-item">
                                     {% if topic.pinned %}
@@ -45,7 +46,8 @@
                             </a>
                         </li>
                         <li>
-                            <form action="#" method="post" class="d-inline">
+                            <form action="{{ url_for('forum_topic', topic_id=topic.id) }}" method="post" class="d-inline">
+                                {{ form.hidden_tag() }}
                                 <input type="hidden" name="topic_id" value="{{ topic.id }}">
                                 <button type="submit" name="action" value="delete" class="dropdown-item text-danger">
                                     <i class="bi bi-trash"></i> Delete
@@ -103,7 +105,8 @@
                                 </a>
                             </li>
                             <li>
-                                <form action="#" method="post" class="d-inline">
+                                <form action="{{ url_for('forum_topic', topic_id=topic.id) }}" method="post" class="d-inline">
+                                    {{ form.hidden_tag() }}
                                     <input type="hidden" name="reply_id" value="{{ reply.id }}">
                                     <button type="submit" name="action" value="delete_reply" class="dropdown-item text-danger">
                                         <i class="bi bi-trash"></i> Delete

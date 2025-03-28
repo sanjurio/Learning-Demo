@@ -1032,6 +1032,44 @@ def forum_topic(topic_id):
         ForumReply.created_at.asc()
     ).all()
     
+    # Handle actions like pin/unpin/delete
+    if request.method == 'POST' and request.form.get('action'):
+        action = request.form.get('action')
+        
+        # Handle topic actions
+        if 'topic_id' in request.form:
+            # Toggle pin status (admin only)
+            if action == 'toggle_pin' and current_user.is_admin:
+                topic.pinned = not topic.pinned
+                db.session.commit()
+                flash('Topic has been ' + ('pinned' if topic.pinned else 'unpinned'), 'success')
+                return redirect(url_for('forum_topic', topic_id=topic_id))
+            
+            # Delete topic (owner or admin only)
+            elif action == 'delete' and (current_user.id == topic.user_id or current_user.is_admin):
+                # Redirect appropriately based on whether it's a course topic or general topic
+                redirect_url = url_for('forum_index')
+                if topic.course_id:
+                    redirect_url = url_for('course_forum', course_id=topic.course_id)
+                
+                db.session.delete(topic)
+                db.session.commit()
+                flash('Topic has been deleted', 'success')
+                return redirect(redirect_url)
+        
+        # Handle reply actions
+        elif 'reply_id' in request.form:
+            reply_id = request.form.get('reply_id')
+            reply = ForumReply.query.get_or_404(reply_id)
+            
+            # Delete reply (owner or admin only)
+            if action == 'delete_reply' and (current_user.id == reply.user_id or current_user.is_admin):
+                db.session.delete(reply)
+                db.session.commit()
+                flash('Reply has been deleted', 'success')
+                return redirect(url_for('forum_topic', topic_id=topic_id))
+    
+    # Handle new reply submission
     form = ForumReplyForm()
     if form.validate_on_submit():
         reply = ForumReply(
