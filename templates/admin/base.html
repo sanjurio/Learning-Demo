@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="alert alert-info">
+        <h4>Admin Area</h4>
+        <p>Welcome to the admin area. Use the navigation bar to manage content and users.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Users</h5>
+                </div>
+                <div class="card-body">
+                    <p>Manage user accounts, approve pending registrations, and assign interests.</p>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-primary me-2">Manage Users</a>
+                    <a href="{{ url_for('admin_pending_users') }}" class="btn btn-outline-primary">Pending Approvals</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Content</h5>
+                </div>
+                <div class="card-body">
+                    <p>Manage courses, lessons, and interest categories throughout the platform.</p>
+                    <a href="{{ url_for('admin_courses') }}" class="btn btn-primary me-2">Manage Courses</a>
+                    <a href="{{ url_for('admin_interests') }}" class="btn btn-outline-primary">Manage Interests</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">API Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <p>Configure API keys for external services like OpenAI.</p>
+                    <a href="{{ url_for('admin_api_keys') }}" class="btn btn-primary">Configure API Keys</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Document Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <p>Access the document analysis tool to extract information from various file types.</p>
+                    <a href="{{ url_for('document_analysis') }}" class="btn btn-primary">Document Analysis Tool</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

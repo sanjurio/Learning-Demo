@@ -3,45 +3,44 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h1 class="h3 mb-0">Manage API Keys</h1>
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1>{{ title }}</h1>
+            <p class="lead">Manage API keys for external services</p>
         </div>
-        <div class="card-body">
-            <div class="mb-4">
-                <p>Configure API keys for external services used by the platform.</p>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Note:</strong> These keys are stored securely in the database and used for features like the document analysis chatbot.
-                </div>
-            </div>
+    </div>
 
-            <div class="card mb-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
                 <div class="card-header">
-                    <h2 class="h5 mb-0">OpenAI API Key</h2>
+                    <h5 class="card-title mb-0">OpenAI API Key</h5>
                 </div>
                 <div class="card-body">
-                    <p>Used for document analysis and AI-powered features.</p>
+                    <p>
+                        This API key is used for the document analysis feature and other AI-powered 
+                        functionality throughout the platform.
+                    </p>
                     
                     {% if has_key %}
                     <div class="alert alert-success">
-                        <i class="fas fa-check-circle me-2"></i>
-                        <strong>Status:</strong> API key is configured
+                        <i class="bi bi-check-circle me-2"></i> OpenAI API key is configured
                     </div>
                     {% else %}
                     <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Status:</strong> API key not configured
+                        <i class="bi bi-exclamation-triangle me-2"></i> OpenAI API key is not configured
                     </div>
                     {% endif %}
-                    
-                    <form method="POST" action="{{ url_for('admin_api_keys') }}" class="mt-3">
+
+                    <form method="POST" action="{{ url_for('admin_api_keys') }}">
                         {{ form.hidden_tag() }}
-                        
                         <div class="mb-3">
                             {{ form.openai_api_key.label(class="form-label") }}
                             {{ form.openai_api_key(class="form-control", placeholder="sk-...") }}
+                            <div class="form-text">
+                                API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>
+                            </div>
                             {% if form.openai_api_key.errors %}
                             <div class="invalid-feedback d-block">
                                 {% for error in form.openai_api_key.errors %}
@@ -49,23 +48,34 @@
                                 {% endfor %}
                             </div>
                             {% endif %}
-                            <div class="form-text">
-                                You can get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI's website</a>.
-                            </div>
                         </div>
-                        
-                        {{ form.submit(class="btn btn-primary") }}
+                        <button type="submit" class="btn btn-primary">Save API Key</button>
                     </form>
                 </div>
             </div>
-            
-            <div class="d-flex justify-content-between mt-4">
-                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
-                </a>
-                <a href="{{ url_for('document_analysis') }}" class="btn btn-info">
-                    <i class="fas fa-robot me-2"></i> Test Document Analysis
-                </a>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">About API Keys</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        API keys are used to authenticate requests to external services.
+                        They are stored securely in the database and are not exposed to users.
+                    </p>
+                    <p>
+                        <strong>Important:</strong> API keys are sensitive information. 
+                        Never share your API keys with anyone or expose them in client-side code.
+                    </p>
+                    <div class="mt-3">
+                        <h6>Supported Services:</h6>
+                        <ul>
+                            <li>OpenAI API - Used for document analysis and AI features</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

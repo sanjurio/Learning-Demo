@@ -1,79 +1,91 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
-    <h1 class="mb-4">Document Analysis Chatbot</h1>
-    
+<div class="container">
+    <div class="row my-4">
+        <div class="col-md-12">
+            <h1>Document Analysis</h1>
+            <p class="lead">Upload a document (PDF, DOCX, or TXT) to analyze its content using AI.</p>
+        </div>
+    </div>
+
     {% if not api_key_configured %}
-    <div class="alert alert-warning mb-4">
-        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>API Key Not Configured</h5>
-        <p>The OpenAI API key is not configured yet. This feature requires an API key to work properly.</p>
-        {% if current_user.is_admin %}
-        <hr>
-        <p class="mb-0">As an administrator, you can <a href="{{ url_for('admin_api_keys') }}" class="alert-link">configure the API key here</a>.</p>
-        {% else %}
-        <p class="mb-0">Please contact an administrator to configure the API key.</p>
-        {% endif %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>OpenAI API Key Not Configured</strong>
+        <p class="mb-0 mt-2">
+            {% if current_user.is_admin %}
+            The OpenAI API key is not configured. Please go to 
+            <a href="{{ url_for('admin_api_keys') }}">API Keys</a> page to configure it.
+            {% else %}
+            The OpenAI API key is not configured. Please contact an administrator to configure it.
+            {% endif %}
+        </p>
     </div>
     {% endif %}
-    
+
     <div class="row">
-        <div class="col-md-5 mb-4">
-            <div class="card shadow-sm">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Upload Document</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title mb-3">Upload Document</h5>
-                    <p class="text-muted">Upload a document (PDF, DOCX, or TXT) to analyze its content.</p>
-                    
                     <form id="document-upload-form" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="document-file" class="form-label">Select Document</label>
-                            <input class="form-control" type="file" id="document-file" name="file" accept=".pdf,.docx,.txt">
+                            <input type="file" class="form-control" id="document-file" name="file" accept=".pdf,.docx,.txt">
                             <div class="form-text">Supported formats: PDF, DOCX, TXT</div>
                         </div>
-                        
-                        <button type="submit" class="btn btn-primary" id="analyze-btn" {% if not api_key_configured %}disabled{% endif %}>
-                            <span id="analyze-btn-text">Analyze Document</span>
-                            <span id="analyze-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <button type="submit" class="btn btn-primary" id="analyze-btn">
+                            <span class="spinner-border spinner-border-sm d-none" id="loading-spinner" role="status" aria-hidden="true"></span>
+                            Analyze Document
                         </button>
                     </form>
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-7">
-            <div class="card shadow-sm">
-                <div class="card-body" id="analysis-container">
-                    <h5 class="card-title mb-3">Document Analysis</h5>
-                    <p class="text-center text-muted" id="initial-message">
-                        <i class="bi bi-file-earmark-text me-2"></i>
-                        Upload a document to see its analysis here.
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">How It Works</h5>
+                </div>
+                <div class="card-body">
+                    <p>
+                        This tool uses AI to analyze documents and extract key information. 
+                        Simply upload a document and the system will:
                     </p>
-                    
-                    <!-- Analysis results will be displayed here -->
-                    <div id="analysis-results" class="d-none">
-                        <h6>Summary</h6>
-                        <div class="p-3 mb-3 border rounded bg-light" id="summary-text"></div>
-                        
-                        <h6>Questions & Answers</h6>
-                        <div id="qa-container"></div>
-                    </div>
+                    <ol>
+                        <li>Extract the text content from your document</li>
+                        <li>Generate a concise summary of the main points</li>
+                        <li>Create a list of questions and answers based on the content</li>
+                        <li>Provide key insights from the document</li>
+                    </ol>
+                    <p>
+                        This can be useful for quickly understanding long documents, preparing for discussions, 
+                        or creating study materials.
+                    </p>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="errorModalLabel">Error</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4 d-none" id="results-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Analysis Results</h5>
                 </div>
-                <div class="modal-body" id="error-message">
-                    An error occurred while analyzing the document.
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6>Document Summary</h6>
+                        <div id="summary-content" class="p-3 bg-light rounded"></div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Questions & Answers</h6>
+                        <div id="questions-content"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -83,123 +95,101 @@
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const uploadForm = document.getElementById('document-upload-form');
-        const analyzeBtn = document.getElementById('analyze-btn');
-        const analyzeBtnText = document.getElementById('analyze-btn-text');
-        const analyzeSpinner = document.getElementById('analyze-spinner');
-        const initialMessage = document.getElementById('initial-message');
-        const analysisResults = document.getElementById('analysis-results');
-        const summaryText = document.getElementById('summary-text');
-        const qaContainer = document.getElementById('qa-container');
-        const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-        const errorMessage = document.getElementById('error-message');
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('document-upload-form');
+    const fileInput = document.getElementById('document-file');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const resultsCard = document.getElementById('results-card');
+    const summaryContent = document.getElementById('summary-content');
+    const questionsContent = document.getElementById('questions-content');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
         
-        uploadForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            
-            const fileInput = document.getElementById('document-file');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showError('Please select a document to analyze.');
-                return;
-            }
-            
-            // Check file extension
-            const fileName = file.name;
-            const fileExt = fileName.split('.').pop().toLowerCase();
-            
-            if (!['pdf', 'docx', 'txt'].includes(fileExt)) {
-                showError('Unsupported file format. Please upload a PDF, DOCX, or TXT file.');
-                return;
-            }
-            
-            // Show loading state
-            setLoading(true);
-            
-            // Create form data for upload
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            // Send the request
-            fetch('/api/analyze-document', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                setLoading(false);
-                
-                if (!data.success) {
-                    showError(data.message || 'Failed to analyze the document. Please try again.');
-                    return;
-                }
-                
-                // Display results
-                displayResults(data);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                setLoading(false);
-                showError('An error occurred during document analysis. Please try again later.');
-            });
-        });
-        
-        function setLoading(isLoading) {
-            if (isLoading) {
-                analyzeBtn.disabled = true;
-                analyzeBtnText.textContent = 'Analyzing...';
-                analyzeSpinner.classList.remove('d-none');
-            } else {
-                analyzeBtn.disabled = false;
-                analyzeBtnText.textContent = 'Analyze Document';
-                analyzeSpinner.classList.add('d-none');
-            }
+        if (!fileInput.files.length) {
+            alert('Please select a file to analyze');
+            return;
         }
         
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorModal.show();
-        }
+        // Show loading state
+        loadingSpinner.classList.remove('d-none');
+        analyzeBtn.disabled = true;
+        resultsCard.classList.add('d-none');
         
-        function displayResults(data) {
-            // Show results container
-            initialMessage.classList.add('d-none');
-            analysisResults.classList.remove('d-none');
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        fetch('/api/analyze-document', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.message || 'An error occurred while analyzing the document');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Hide loading state
+            loadingSpinner.classList.add('d-none');
+            analyzeBtn.disabled = false;
+            
+            // Show results
+            resultsCard.classList.remove('d-none');
             
             // Display summary
-            summaryText.textContent = data.summary;
+            summaryContent.textContent = data.summary || 'No summary generated';
             
-            // Display questions and answers
-            qaContainer.innerHTML = '';
-            
-            if (data.ai_analysis) {
-                // AI generated Q&A
-                qaContainer.innerHTML = `<div class="alert alert-info mb-3">
-                    <small class="text-muted d-block mb-2">AI-powered analysis</small>
-                    ${data.questions}
-                </div>`;
-            } else {
-                // Basic questions
-                let questionsHtml = '';
-                data.questions.forEach((item, index) => {
-                    if (typeof item === 'string') {
-                        questionsHtml += `<p>${item}</p>`;
-                    } else {
-                        questionsHtml += `
-                        <div class="card mb-2">
-                            <div class="card-body">
-                                <h6 class="card-title">Q: ${item.question}</h6>
-                                <p class="card-text text-muted">Context: ${item.context}</p>
+            // Display questions
+            questionsContent.innerHTML = '';
+            if (data.questions && data.questions.length) {
+                const accordion = document.createElement('div');
+                accordion.className = 'accordion';
+                accordion.id = 'questionsAccordion';
+                
+                data.questions.forEach((qa, index) => {
+                    const itemId = `question-${index}`;
+                    const collapseId = `collapse-${index}`;
+                    
+                    const accordionItem = document.createElement('div');
+                    accordionItem.className = 'accordion-item';
+                    
+                    accordionItem.innerHTML = `
+                        <h2 class="accordion-header" id="${itemId}">
+                            <button class="accordion-button ${index > 0 ? 'collapsed' : ''}" type="button" 
+                                    data-bs-toggle="collapse" data-bs-target="#${collapseId}" 
+                                    aria-expanded="${index === 0 ? 'true' : 'false'}" aria-controls="${collapseId}">
+                                ${qa.question}
+                            </button>
+                        </h2>
+                        <div id="${collapseId}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
+                             aria-labelledby="${itemId}" data-bs-parent="#questionsAccordion">
+                            <div class="accordion-body">
+                                ${qa.answer}
                             </div>
-                        </div>`;
-                    }
+                        </div>
+                    `;
+                    
+                    accordion.appendChild(accordionItem);
                 });
                 
-                qaContainer.innerHTML = questionsHtml;
+                questionsContent.appendChild(accordion);
+            } else {
+                questionsContent.innerHTML = '<p>No questions generated</p>';
             }
-        }
+        })
+        .catch(error => {
+            // Hide loading state
+            loadingSpinner.classList.add('d-none');
+            analyzeBtn.disabled = false;
+            
+            // Show error
+            alert(error.message || 'An error occurred while analyzing the document');
+        });
     });
+});
 </script>
 {% endblock %}

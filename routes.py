@@ -1,16 +1,18 @@
-from flask import render_template, flash, redirect, url_for, request, abort, session
+from flask import render_template, flash, redirect, url_for, request, abort, session, jsonify
 from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlparse
 import os
+import io
 from app import app, db
 from models import (User, Course, Lesson, Interest, UserInterest, CourseInterest, UserCourse,
-                 ForumTopic, ForumReply, UserLessonProgress)
+                 ForumTopic, ForumReply, UserLessonProgress, ApiKey)
 from forms import (LoginForm, RegistrationForm, TwoFactorForm, SetupTwoFactorForm, InterestSelectionForm, 
                   UserApprovalForm, CourseForm, LessonForm, InterestForm, UserInterestAccessForm, ProfileForm,
-                  ForumTopicForm, ForumReplyForm)
+                  ForumTopicForm, ForumReplyForm, ApiKeyForm)
 from utils import (generate_otp_secret, verify_totp, generate_qr_code, get_user_accessible_courses, 
                   get_pending_users, approve_user, reject_user, grant_interest_access, revoke_interest_access, 
                   get_user_interests_status, user_can_access_course, setup_initial_data, get_recommended_courses)
+from document_analysis import analyze_document
 from datetime import datetime
 
 # Initialize the database with some data when needed
@@ -1114,11 +1116,6 @@ def admin_api_keys():
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('index'))
     
-    import os  # Import os module for environment variable operations
-    
-    from forms import ApiKeyForm
-    from models import ApiKey
-    
     form = ApiKeyForm()
     
     # Get existing OpenAI API key if it exists
@@ -1163,8 +1160,6 @@ def admin_api_keys():
 def document_analysis():
     """Render the document analysis chatbot page"""
     # Check if OpenAI API key is configured
-    import os  # Import for environment variable access
-    from models import ApiKey
     
     openai_key = ApiKey.query.filter_by(service_name='openai').first()
     api_key_configured = bool(openai_key)
@@ -1181,9 +1176,6 @@ def document_analysis():
 @login_required
 def api_analyze_document():
     """API endpoint to analyze an uploaded document"""
-    from flask import jsonify
-    from document_analysis import analyze_document
-    import io
     
     if 'file' not in request.files:
         return jsonify({
