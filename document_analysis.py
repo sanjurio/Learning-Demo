@@ -31,12 +31,14 @@ def get_openai_client():
             
             # We're using openai version 1.69.0 which is the new API
             from openai import OpenAI
+            # Initialize with minimal parameters to avoid errors
             client = OpenAI(api_key=api_key)
             logger.info(f"OpenAI client initialized with API key: {api_key[:4]}...{api_key[-4:]}")
             
             return client
         except Exception as e:
             logger.error(f"Error initializing OpenAI client: {e}")
+            logger.error(f"Exception type: {type(e).__name__}")
             return None
     else:
         logger.error("No OpenAI API key found in environment variables")
