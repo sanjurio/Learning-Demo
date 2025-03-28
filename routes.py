@@ -19,6 +19,30 @@ from datetime import datetime
 def initialize_db():
     # This will be called from route functions, not at import time
     setup_initial_data()
+    
+    # Store OpenAI API key from environment variable if available
+    openai_api_key = os.environ.get('OPENAI_API_KEY')
+    if openai_api_key:
+        # Check if key already exists
+        existing_key = ApiKey.query.filter_by(service_name='openai').first()
+        if not existing_key:
+            # Create new key entry
+            print(f"Storing OpenAI API key in database")
+            new_key = ApiKey(
+                service_name='openai',
+                key_value=openai_api_key,
+                created_by=1  # Admin user ID
+            )
+            db.session.add(new_key)
+            db.session.commit()
+            print(f"OpenAI API key stored in database")
+        elif existing_key.key_value != openai_api_key:
+            # Update existing key if different
+            print(f"Updating OpenAI API key in database")
+            existing_key.key_value = openai_api_key
+            existing_key.updated_at = datetime.utcnow()
+            db.session.commit()
+            print(f"OpenAI API key updated in database")
 
 @app.route('/')
 def index():
@@ -1176,33 +1200,47 @@ def document_analysis():
 @login_required
 def api_analyze_document():
     """API endpoint to analyze an uploaded document"""
-    
-    if 'file' not in request.files:
-        return jsonify({
-            'success': False,
-            'message': 'No file uploaded'
-        }), 400
+    try:
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'message': 'No file uploaded'
+            }), 400
+            
+        file = request.files['file']
         
-    file = request.files['file']
-    
-    if file.filename == '':
-        return jsonify({
-            'success': False,
-            'message': 'No file selected'
-        }), 400
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'message': 'No file selected'
+            }), 400
+            
+        # Check if the file is one of the allowed types
+        allowed_extensions = {'pdf', 'docx', 'txt'}
+        if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            return jsonify({
+                'success': False,
+                'message': 'Invalid file format. Please upload a PDF, DOCX, or TXT file.'
+            }), 400
         
-    # Check if the file is one of the allowed types
-    allowed_extensions = {'pdf', 'docx', 'txt'}
-    if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+        # Make sure OpenAI API key is in environment
+        openai_key = ApiKey.query.filter_by(service_name='openai').first()
+        if openai_key and not os.environ.get('OPENAI_API_KEY'):
+            os.environ['OPENAI_API_KEY'] = openai_key.key_value
+            print(f"Set OpenAI API key from database: {openai_key.key_value[:5]}...{openai_key.key_value[-4:]}")
+        
+        # Read file into memory
+        file_bytes = io.BytesIO(file.read())
+        
+        # Analyze the document
+        print(f"Analyzing document: {file.filename}")
+        result = analyze_document(file_bytes, file.filename)
+        print(f"Analysis result: {result['success']}")
+        
+        return jsonify(result)
+    except Exception as e:
+        app.logger.error(f"Error in document analysis endpoint: {str(e)}")
         return jsonify({
             'success': False,
-            'message': 'Invalid file format. Please upload a PDF, DOCX, or TXT file.'
-        }), 400
-    
-    # Read file into memory
-    file_bytes = io.BytesIO(file.read())
-    
-    # Analyze the document
-    result = analyze_document(file_bytes, file.filename)
-    
-    return jsonify(result)
+            'message': f'An error occurred during document analysis: {str(e)}'
+        }), 500

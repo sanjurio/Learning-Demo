@@ -13,8 +13,14 @@ openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 # Update OpenAI client if API key is set
 if openai.api_key:
-    client = openai.OpenAI(api_key=openai.api_key)
+    try:
+        client = openai.OpenAI(api_key=openai.api_key)
+        print(f"OpenAI client initialized with API key: {openai.api_key[:5]}...{openai.api_key[-4:]}")
+    except Exception as e:
+        print(f"Error initializing OpenAI client: {e}")
+        client = None
 else:
+    print("No OpenAI API key found in environment variables")
     client = None
 
 def extract_text_from_pdf(file_stream):
@@ -118,6 +124,7 @@ def summarize_text(text, max_length=500):
 def analyze_with_ai(text, prompt_type="summary"):
     """Analyze text using OpenAI API"""
     if not openai.api_key or not client:
+        print("Cannot analyze with AI: API key or client not available")
         return None
     
     try:
@@ -131,6 +138,7 @@ def analyze_with_ai(text, prompt_type="summary"):
         elif prompt_type == "questions":
             prompt = f"Based on the following document, generate 3 important questions someone might ask about this content, along with their answers:\n\n{text}"
         
+        print(f"Sending request to OpenAI API for {prompt_type}")
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -141,7 +149,9 @@ def analyze_with_ai(text, prompt_type="summary"):
             temperature=0.5
         )
         
-        return response.choices[0].message.content
+        result = response.choices[0].message.content
+        print(f"Successfully received response from OpenAI API")
+        return result
     except Exception as e:
         print(f"Error with OpenAI API: {e}")
         return None

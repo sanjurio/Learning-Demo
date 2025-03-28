@@ -54,6 +54,10 @@
                                 <li>Scan the QR code or manually enter the secret key</li>
                                 <li>Once added, enter the 6-digit code shown in your app below</li>
                             </ol>
+                            <div class="alert alert-light mt-2 small">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Tip:</strong> The authenticator app generates a new code every 30 seconds, but our system accepts codes within a 90-second window to account for clock differences between devices.
+                            </div>
                         </div>
                     </div>
                     
@@ -85,6 +89,8 @@
                             <div class="progress mt-1" style="height: 4px;">
                                 <div id="token-progress" class="progress-bar bg-info" style="width: 100%;"></div>
                             </div>
+                            <small class="text-muted mt-1 d-block">Don't worry about exact timing - your code is valid for a 90-second window</small>
+                            <small id="code-refresh-message" class="text-success" style="opacity: 0; transition: opacity 0.5s;"></small>
                         </div>
                         {% endif %}
                     </div>

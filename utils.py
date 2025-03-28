@@ -13,8 +13,16 @@ def generate_otp_secret():
     return pyotp.random_base32()
 
 def get_totp_uri(username, secret, issuer_name="AI Learning Platform"):
-    """Generate the TOTP URI for QR code generation"""
-    return pyotp.totp.TOTP(secret).provisioning_uri(
+    """Generate the TOTP URI for QR code generation
+    
+    Creates a TOTP object with standard 30-second period
+    """
+    # Create TOTP object with standard settings
+    # This uses SHA1 algorithm (default) and 30-second time period
+    totp = pyotp.totp.TOTP(secret)
+    
+    # Generate the provisioning URI (for QR code)
+    return totp.provisioning_uri(
         name=username, 
         issuer_name=issuer_name
     )
@@ -43,9 +51,15 @@ def generate_qr_code(username, secret):
     return f"data:image/png;base64,{img_str}"
 
 def verify_totp(secret, token):
-    """Verify the provided TOTP token"""
+    """Verify the provided TOTP token with an extended validation window
+    
+    This uses a window of +/- 1 time step (30 seconds before and after)
+    to account for time differences between the server and the authenticator app
+    """
     totp = pyotp.TOTP(secret)
-    return totp.verify(token)
+    # Use a window of 1 which means 1 step before and after (total of 3 steps)
+    # This represents a 90-second window (30 seconds per step)
+    return totp.verify(token, valid_window=1)
 
 def get_user_accessible_courses(user):
     """Get courses that are accessible to a user based on their interests"""

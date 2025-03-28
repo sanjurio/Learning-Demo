@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Countdown timer for token refresh (tokens typically refresh every 30 seconds)
+    // However, the system accepts codes within a 90-second window to account for clock differences
     const tokenTimer = document.getElementById('token-timer');
     if (tokenTimer) {
         // Calculate seconds remaining until the next 30-second interval
@@ -36,12 +37,30 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update progress bar if it exists
             const progressBar = document.getElementById('token-progress');
             if (progressBar) {
+                // Adjust color based on time remaining
+                if (remainingSeconds < 10) {
+                    progressBar.classList.remove('bg-info');
+                    progressBar.classList.add('bg-warning');
+                } else {
+                    progressBar.classList.remove('bg-warning');
+                    progressBar.classList.add('bg-info');
+                }
                 progressBar.style.width = `${(remainingSeconds / 30) * 100}%`;
             }
             
             // If we're at the beginning of a new interval, highlight the timer
             if (remainingSeconds === 30) {
                 tokenTimer.classList.add('highlight');
+                // Show an info message that the code has refreshed
+                const messageElement = document.getElementById('code-refresh-message');
+                if (messageElement) {
+                    messageElement.textContent = 'Code refreshed!';
+                    messageElement.style.opacity = '1';
+                    setTimeout(() => {
+                        messageElement.style.opacity = '0';
+                    }, 2000);
+                }
+                
                 setTimeout(() => {
                     tokenTimer.classList.remove('highlight');
                 }, 1000);
