@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Document Analysis Workflow Diagram -->
+  <defs>
+    <style>
+      text { font-family: Arial, sans-serif; }
+      .title { font-size: 16px; font-weight: bold; }
+      .step-title { font-size: 14px; font-weight: bold; }
+      .label { font-size: 12px; }
+      .box { fill: #3498db; stroke: #2980b9; stroke-width: 2; opacity: 0.9; }
+      .arrow { stroke: #7f8c8d; stroke-width: 2; marker-end: url(#arrowhead); }
+      .document { fill: #e74c3c; }
+      .process { fill: #2ecc71; }
+      .ai { fill: #9b59b6; }
+      .output { fill: #f39c12; }
+    </style>
+    
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7f8c8d" />
+    </marker>
+  </defs>
+  
+  <rect width="800" height="500" fill="#f9f9f9"/>
+  <text x="400" y="30" text-anchor="middle" class="title" fill="#2c3e50">Document Analysis Workflow</text>
+  
+  <!-- Document Upload -->
+  <g transform="translate(50, 80)">
+    <rect width="120" height="80" rx="5" class="box document"/>
+    <text x="60" y="30" text-anchor="middle" class="step-title" fill="white">Document</text>
+    <text x="60" y="50" text-anchor="middle" class="label" fill="white">Upload</text>
+    <text x="60" y="65" text-anchor="middle" class="label" fill="white">(PDF, DOCX, TXT)</text>
+  </g>
+  
+  <!-- Text Extraction -->
+  <g transform="translate(220, 80)">
+    <rect width="120" height="80" rx="5" class="box process"/>
+    <text x="60" y="30" text-anchor="middle" class="step-title" fill="white">Text</text>
+    <text x="60" y="50" text-anchor="middle" class="label" fill="white">Extraction</text>
+    <text x="60" y="65" text-anchor="middle" class="label" fill="white">Process</text>
+  </g>
+  
+  <!-- OpenAI Processing -->
+  <g transform="translate(390, 80)">
+    <rect width="120" height="80" rx="5" class="box ai"/>
+    <text x="60" y="30" text-anchor="middle" class="step-title" fill="white">OpenAI</text>
+    <text x="60" y="50" text-anchor="middle" class="label" fill="white">Analysis</text>
+    <text x="60" y="65" text-anchor="middle" class="label" fill="white">(GPT Model)</text>
+  </g>
+  
+  <!-- Fallback NLP -->
+  <g transform="translate(390, 190)">
+    <rect width="120" height="80" rx="5" class="box process"/>
+    <text x="60" y="30" text-anchor="middle" class="step-title" fill="white">Fallback</text>
+    <text x="60" y="50" text-anchor="middle" class="label" fill="white">NLP</text>
+    <text x="60" y="65" text-anchor="middle" class="label" fill="white">(If API Unavailable)</text>
+  </g>
+  
+  <!-- Results Processing -->
+  <g transform="translate(560, 130)">
+    <rect width="120" height="80" rx="5" class="box process"/>
+    <text x="60" y="30" text-anchor="middle" class="step-title" fill="white">Results</text>
+    <text x="60" y="50" text-anchor="middle" class="label" fill="white">Processing &</text>
+    <text x="60" y="65" text-anchor="middle" class="label" fill="white">Formatting</text>
+  </g>
+  
+  <!-- User Interface -->
+  <g transform="translate(560, 250)">
+    <rect width="120" height="80" rx="5" class="box output"/>
+    <text x="60" y="30" text-anchor="middle" class="step-title" fill="white">User</text>
+    <text x="60" y="50" text-anchor="middle" class="label" fill="white">Interface</text>
+    <text x="60" y="65" text-anchor="middle" class="label" fill="white">(Chat-like UI)</text>
+  </g>
+  
+  <!-- Summary Output -->
+  <g transform="translate(390, 320)">
+    <rect width="120" height="60" rx="5" class="box output"/>
+    <text x="60" y="25" text-anchor="middle" class="step-title" fill="white">Summary</text>
+    <text x="60" y="45" text-anchor="middle" class="label" fill="white">Output</text>
+  </g>
+  
+  <!-- Questions Output -->
+  <g transform="translate(220, 320)">
+    <rect width="120" height="60" rx="5" class="box output"/>
+    <text x="60" y="25" text-anchor="middle" class="step-title" fill="white">Questions</text>
+    <text x="60" y="45" text-anchor="middle" class="label" fill="white">& Answers</text>
+  </g>
+  
+  <!-- Connections -->
+  <!-- Document to Extraction -->
+  <line x1="170" y1="120" x2="215" y2="120" class="arrow" />
+  
+  <!-- Extraction to OpenAI -->
+  <line x1="340" y1="120" x2="385" y2="120" class="arrow" />
+  
+  <!-- OpenAI Decision Diamond -->
+  <g transform="translate(340, 190)">
+    <polygon points="20,0 40,20 20,40 0,20" stroke="#7f8c8d" fill="#ecf0f1" stroke-width="2" />
+    <text x="20" y="25" text-anchor="middle" class="label" fill="#2c3e50">API?</text>
+  </g>
+  
+  <line x1="450" y1="160" x2="450" y2="185" class="arrow" />
+  <line x1="340" y1="210" x2="385" y2="210" class="arrow" />
+  <line x1="340" y1="210" x2="340" y2="270" class="arrow" />
+  <line x1="340" y1="270" x2="285" y2="320" class="arrow" />
+  
+  <!-- OpenAI to Results -->
+  <line x1="510" y1="120" x2="555" y2="150" class="arrow" />
+  
+  <!-- Fallback to Results -->
+  <line x1="510" y1="230" x2="555" y2="180" class="arrow" />
+  
+  <!-- Results to UI -->
+  <line x1="620" y1="210" x2="620" y2="245" class="arrow" />
+  
+  <!-- UI to Outputs -->
+  <line x1="560" y1="290" x2="450" y2="320" class="arrow" />
+  <line x1="450" y1="320" x2="345" y2="350" class="arrow" />
+  
+  <!-- Legend -->
+  <g transform="translate(50, 400)">
+    <rect width="550" height="80" fill="white" stroke="#95a5a6" stroke-width="1"/>
+    <text x="275" y="20" text-anchor="middle" class="title" fill="#2c3e50">Legend</text>
+    
+    <rect x="20" y="35" width="20" height="20" class="document" />
+    <text x="50" y="50" class="label" fill="#2c3e50">Document Input</text>
+    
+    <rect x="150" y="35" width="20" height="20" class="process" />
+    <text x="180" y="50" class="label" fill="#2c3e50">Processing Step</text>
+    
+    <rect x="280" y="35" width="20" height="20" class="ai" />
+    <text x="310" y="50" class="label" fill="#2c3e50">AI Analysis</text>
+    
+    <rect x="410" y="35" width="20" height="20" class="output" />
+    <text x="440" y="50" class="label" fill="#2c3e50">Output</text>
+  </g>
+</svg>

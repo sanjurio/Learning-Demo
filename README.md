@@ -1,98 +1,157 @@
-# AI-Powered Learning Platform
+# AI Learning Platform
 
-An AI-powered learning platform that provides intelligent content management, personalized learning experiences, and enhanced user engagement through innovative educational technologies.
+A comprehensive learning management system with AI-powered features for personalized education experiences.
 
-## Features
+## About
 
-- **User Management:** Registration with mandatory 2FA, admin approval system, and role-based access control
-- **Content Management:** Create and organize courses, lessons, and interest categories
-- **AI-Powered Recommendations:** Get personalized course recommendations based on user interests
-- **Discussion Forums:** Both general and course-specific discussion areas
-- **Document Analysis:** AI-powered tool that can analyze PDFs, DOCX, and TXT files to generate summaries and Q&A
+The AI Learning Platform is a web-based application that combines traditional learning management functionality with advanced AI features. It provides a secure, structured environment for creating, managing, and delivering educational content, with intelligent tools to enhance the learning experience.
 
-## Tech Stack
+### Key Features
 
-- **Backend:** Flask
-- **Database:** PostgreSQL
-- **Frontend:** Bootstrap, HTML/CSS/JS
-- **Authentication:** Flask-Login with mandatory 2FA via TOTP
-- **Document Processing:** PyPDF2, python-docx, NLTK, OpenAI API
-- **Deployment:** Configured for Render or PythonAnywhere
+- **Secure Authentication**: Email-based registration with mandatory two-factor authentication
+- **User Management**: Admin approval process and interest-based access control
+- **Course System**: Structured courses with ordered lessons and progress tracking
+- **Interest Categories**: Organization of content by topic with personalized recommendations
+- **Discussion Forums**: General and course-specific discussion boards
+- **Document Analysis**: AI-powered tool to extract insights from uploaded documents
+- **Admin Dashboard**: Comprehensive tools for content and user management
+- **Responsive Design**: Mobile-friendly interface that works on various devices
 
-## Setup and Installation
+## Screenshots
 
-1. Clone the repository
+![Admin Dashboard](app/documentation/images/screenshot_admin_dashboard.png)
+![Course View](app/documentation/images/screenshot_course_view.png)
+![Document Analysis](app/documentation/images/screenshot_document_analysis.png)
+
+## Technology Stack
+
+- **Backend**: Python with Flask framework
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Authentication**: Flask-Login with TOTP-based 2FA
+- **Frontend**: Bootstrap, HTML, CSS, JavaScript
+- **AI Integration**: OpenAI API for document analysis
+- **Text Processing**: NLTK for natural language processing
+- **Document Handling**: PyPDF2 and python-docx for file processing
+
+## Installation
+
+### Prerequisites
+
+- Python 3.9+
+- PostgreSQL database
+- OpenAI API key (for document analysis)
+
+### Setup
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/ai-learning-platform.git
+   cd ai-learning-platform
+   ```
+
 2. Install dependencies:
-   ```bash
+   ```
    pip install -r deployment_requirements.txt
    ```
-3. Set up environment variables:
-   - `DATABASE_URL`: PostgreSQL connection string
-   - `FLASK_SECRET_KEY`: Secret key for session management
-   - `OPENAI_API_KEY`: For document analysis feature (optional)
+
+3. Configure environment variables:
+   ```
+   export DATABASE_URL=postgresql://username:password@localhost/dbname
+   export FLASK_SECRET_KEY=your-secret-key
+   export OPENAI_API_KEY=your-openai-api-key
+   ```
 
 4. Initialize the database:
-   ```bash
+   ```
    python setup_db.py
    ```
 
-5. Run the application:
-   ```bash
-   gunicorn --bind 0.0.0.0:5000 main:app
+5. Create an admin user:
+   ```
+   python create_admin.py
    ```
 
-## Document Analysis Feature
+6. Run the application:
+   ```
+   python main.py
+   ```
 
-The document analysis feature allows users to upload PDF, DOCX, or TXT files and get AI-powered analysis including:
+7. Access the application at http://localhost:5000
 
-- Document summary
-- Extracted key information
-- Generated questions and answers
+## Usage
 
-### API Key Setup
+After installation, you can access the platform:
 
-There are two ways to configure the OpenAI API key:
+1. Login with the default admin account (email: admin@example.com, password: Admin123)
+2. Create interest categories through the admin interface
+3. Add courses and lessons to your interests
+4. Create user accounts and grant them access to specific interests
+5. Upload and analyze documents with the document analysis tool
 
-#### Method 1: Through the Admin Interface (Recommended)
+For a detailed user guide, see the [Documentation](#documentation) section.
 
-1. Log in as an admin user (default: admin@example.com / Admin123)
-2. Navigate to Admin Dashboard → API Keys
-3. Enter your OpenAI API key (starts with "sk-...")
-4. Save the key
-5. The document analysis feature will be immediately available
+## Documentation
 
-#### Method 2: As an Environment Variable
+Comprehensive documentation is available in the [app/documentation](app/documentation) directory:
 
-You can set the OpenAI API key as an environment variable:
+- [Project Overview](app/documentation/README.md): High-level explanation of the platform
+- [User Guide](app/documentation/user_guide.md): Instructions for end users
+- [Admin Guide](app/documentation/admin_system.md): Guide for administrators
+- [API Documentation](app/documentation/api.md): Details on API endpoints
+- [Database Schema](app/documentation/models.md): Database model documentation
+- [Deployment Guide](app/documentation/deployment.md): Instructions for production deployment
+- [Troubleshooting Guide](app/documentation/troubleshooting.md): Solutions for common issues
 
-- For local development: Set `OPENAI_API_KEY` in your environment
-- For deployment on Render:
-  1. Go to your Render dashboard
-  2. Select your web service
-  3. Go to the "Environment" tab
-  4. Add key: `OPENAI_API_KEY` and value: your API key
-  5. Save changes and Render will restart your service
+## Development
 
-### Usage
+### Project Structure
 
-1. Navigate to the Document Analysis page from your dashboard
-2. Upload a document (PDF, DOCX, or TXT format)
-3. The system will process the document and display a summary and Q&A
+```
+/
+├── app/                # Main application package
+│   ├── __init__.py     # Application factory
+│   ├── admin/          # Admin routes and functionality
+│   ├── api/            # API endpoints
+│   ├── auth/           # Authentication functionality
+│   ├── core/           # Core application routes
+│   ├── documentation/  # Project documentation
+│   ├── models/         # Database models
+│   └── utils/          # Utility functions
+├── static/             # Static assets (CSS, JS, images)
+├── templates/          # Jinja2 templates
+├── instance/           # Instance-specific files
+├── main.py             # Application entry point
+└── tests/              # Test suite
+```
 
-If an OpenAI API key is not configured, the system will fall back to basic NLP techniques, but the results will be less comprehensive.
+### Testing
 
-### Troubleshooting
+Run the test suite with:
+```
+python -m unittest discover tests
+```
 
-If you're having issues with the document analysis feature:
+## Deployment
 
-1. Check if the OpenAI API key is configured correctly
-2. Look for any error messages in the application logs
-3. Make sure your OpenAI API key is valid and has sufficient credits
+The application can be deployed to various platforms:
 
-## Admin Account
+- **Render**: Deploy directly from GitHub with PostgreSQL add-on
+- **PythonAnywhere**: Upload code and configure with their MySQL database
+- **Custom VPS**: Deploy to any server with Python and PostgreSQL
 
-The default admin credentials are:
-- Email: admin@example.com
-- Password: Admin123
+For detailed deployment instructions, see the [deployment guide](app/documentation/deployment.md).
 
-Change these credentials immediately after first login.
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Flask and its extensions for the web framework
+- Bootstrap for the responsive UI components
+- OpenAI for the document analysis capabilities
+- NLTK for natural language processing features
