@@ -1,6 +1,7 @@
 from flask import render_template, flash, redirect, url_for, request, abort, session
 from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlparse
+import os
 from app import app, db
 from models import (User, Course, Lesson, Interest, UserInterest, CourseInterest, UserCourse,
                  ForumTopic, ForumReply, UserLessonProgress)
@@ -1102,3 +1103,114 @@ def not_found_error(error):
 def internal_error(error):
     db.session.rollback()
     return render_template('errors/500.html', title='Server Error'), 500
+
+# API Key Management routes
+@app.route('/admin/api-keys', methods=['GET', 'POST'])
+@login_required
+def admin_api_keys():
+    """Admin route to manage API keys"""
+    # Check if user is admin
+    if not current_user.is_admin:
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('index'))
+    
+    import os  # Import os module for environment variable operations
+    
+    from forms import ApiKeyForm
+    from models import ApiKey
+    
+    form = ApiKeyForm()
+    
+    # Get existing OpenAI API key if it exists
+    openai_key = ApiKey.query.filter_by(service_name='openai').first()
+    
+    if form.validate_on_submit():
+        # Save the API key
+        if openai_key:
+            # Update existing key
+            openai_key.key_value = form.openai_api_key.data
+            openai_key.updated_at = datetime.utcnow()
+            db.session.commit()
+            flash('API key updated successfully.', 'success')
+        else:
+            # Create new key
+            new_key = ApiKey(
+                service_name='openai',
+                key_value=form.openai_api_key.data,
+                created_by=current_user.id
+            )
+            db.session.add(new_key)
+            db.session.commit()
+            flash('API key saved successfully.', 'success')
+        
+        # Update environment variable for immediate use
+        os.environ['OPENAI_API_KEY'] = form.openai_api_key.data
+        
+        return redirect(url_for('admin_api_keys'))
+    
+    # Pre-fill form if key exists
+    if openai_key and not form.is_submitted():
+        form.openai_api_key.data = openai_key.key_value
+    
+    return render_template('admin/api_keys.html', 
+                          title='Manage API Keys',
+                          form=form,
+                          has_key=bool(openai_key))
+
+# Document Analysis Chatbot routes
+@app.route('/document-analysis', methods=['GET'])
+@login_required
+def document_analysis():
+    """Render the document analysis chatbot page"""
+    # Check if OpenAI API key is configured
+    import os  # Import for environment variable access
+    from models import ApiKey
+    
+    openai_key = ApiKey.query.filter_by(service_name='openai').first()
+    api_key_configured = bool(openai_key)
+    
+    # If key exists in database but not in environment, set it
+    if openai_key and not os.environ.get('OPENAI_API_KEY'):
+        os.environ['OPENAI_API_KEY'] = openai_key.key_value
+    
+    return render_template('document_analysis.html', 
+                          title='Document Analysis',
+                          api_key_configured=api_key_configured)
+
+@app.route('/api/analyze-document', methods=['POST'])
+@login_required
+def api_analyze_document():
+    """API endpoint to analyze an uploaded document"""
+    from flask import jsonify
+    from document_analysis import analyze_document
+    import io
+    
+    if 'file' not in request.files:
+        return jsonify({
+            'success': False,
+            'message': 'No file uploaded'
+        }), 400
+        
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({
+            'success': False,
+            'message': 'No file selected'
+        }), 400
+        
+    # Check if the file is one of the allowed types
+    allowed_extensions = {'pdf', 'docx', 'txt'}
+    if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+        return jsonify({
+            'success': False,
+            'message': 'Invalid file format. Please upload a PDF, DOCX, or TXT file.'
+        }), 400
+    
+    # Read file into memory
+    file_bytes = io.BytesIO(file.read())
+    
+    # Analyze the document
+    result = analyze_document(file_bytes, file.filename)
+    
+    return jsonify(result)

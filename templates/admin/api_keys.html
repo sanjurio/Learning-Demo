@@ -1,0 +1,73 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">Manage API Keys</h1>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <p>Configure API keys for external services used by the platform.</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> These keys are stored securely in the database and used for features like the document analysis chatbot.
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">OpenAI API Key</h2>
+                </div>
+                <div class="card-body">
+                    <p>Used for document analysis and AI-powered features.</p>
+                    
+                    {% if has_key %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Status:</strong> API key is configured
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Status:</strong> API key not configured
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST" action="{{ url_for('admin_api_keys') }}" class="mt-3">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.openai_api_key.label(class="form-label") }}
+                            {{ form.openai_api_key(class="form-control", placeholder="sk-...") }}
+                            {% if form.openai_api_key.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.openai_api_key.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                You can get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI's website</a>.
+                            </div>
+                        </div>
+                        
+                        {{ form.submit(class="btn btn-primary") }}
+                    </form>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Back to Dashboard
+                </a>
+                <a href="{{ url_for('document_analysis') }}" class="btn btn-info">
+                    <i class="fas fa-robot me-2"></i> Test Document Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -126,3 +126,10 @@ class ForumReplyForm(FlaskForm):
         Length(min=2, message='Reply must be at least 2 characters')
     ])
     submit = SubmitField('Post Reply')
+
+class ApiKeyForm(FlaskForm):
+    openai_api_key = PasswordField('OpenAI API Key', validators=[
+        DataRequired(),
+        Length(min=20, message='API key should be at least 20 characters long')
+    ])
+    submit = SubmitField('Save API Key')

@@ -173,3 +173,15 @@ class ForumReply(db.Model):
     
     def __repr__(self):
         return f'<ForumReply {self.id} by user {self.user_id}>'
+
+class ApiKey(db.Model):
+    __tablename__ = 'api_keys'
+    id = db.Column(db.Integer, primary_key=True)
+    service_name = db.Column(db.String(50), nullable=False, unique=True)
+    key_value = db.Column(db.String(256), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    
+    def __repr__(self):
+        return f'<ApiKey {self.service_name}>'
