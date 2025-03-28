@@ -1207,6 +1207,13 @@ def admin_api_keys():
         
         return redirect(url_for('admin_api_keys'))
     
+    # Create masked key version for display (e.g., sk-ab**********cd)
+    masked_key = None
+    if openai_key and openai_key.key_value:
+        key_value = openai_key.key_value
+        if len(key_value) > 8:
+            masked_key = f"{key_value[:4]}{'*' * (len(key_value) - 8)}{key_value[-4:]}"
+    
     # Pre-fill form if key exists
     if openai_key and not form.is_submitted():
         form.openai_api_key.data = openai_key.key_value
@@ -1214,7 +1221,8 @@ def admin_api_keys():
     return render_template('admin/api_keys.html', 
                           title='Manage API Keys',
                           form=form,
-                          has_key=bool(openai_key))
+                          has_key=bool(openai_key),
+                          masked_key=masked_key)
 
 # Document Analysis Chatbot routes
 @app.route('/document-analysis', methods=['GET'])

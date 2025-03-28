@@ -26,6 +26,12 @@
                     {% if has_key %}
                     <div class="alert alert-success">
                         <i class="bi bi-check-circle me-2"></i> OpenAI API key is configured
+                        {% if masked_key %}
+                        <div class="mt-2">
+                            <strong>Current API Key:</strong> {{ masked_key }}
+                            <small class="text-muted">(First 4 and last 4 characters shown for verification)</small>
+                        </div>
+                        {% endif %}
                     </div>
                     {% else %}
                     <div class="alert alert-warning">
