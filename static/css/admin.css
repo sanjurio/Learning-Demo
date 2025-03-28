@@ -9,7 +9,8 @@
 }
 
 .stat-card {
-  background-color: white;
+  background-color: var(--bs-dark);
+  color: var(--bs-white);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   padding: 1.5rem;
@@ -19,40 +20,41 @@
 
 .stat-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
 }
 
 .stat-card:nth-child(1) {
-  border-top: 3px solid var(--primary-color);
+  border-top: 3px solid var(--bs-primary);
 }
 
 .stat-card:nth-child(2) {
-  border-top: 3px solid var(--success-color);
+  border-top: 3px solid var(--bs-success);
 }
 
 .stat-card:nth-child(3) {
-  border-top: 3px solid var(--warning-color);
+  border-top: 3px solid var(--bs-warning);
 }
 
 .stat-card:nth-child(4) {
-  border-top: 3px solid var(--danger-color);
+  border-top: 3px solid var(--bs-danger);
 }
 
 .stat-value {
   font-size: 2.5rem;
   font-weight: bold;
   margin: 1rem 0;
+  color: var(--bs-white);
 }
 
 .stat-label {
   font-size: 1rem;
-  color: #777;
+  color: var(--bs-gray-300);
   margin-bottom: 0.5rem;
 }
 
 /* Admin navigation */
 .admin-nav {
-  background-color: var(--light-color);
+  background-color: var(--bs-gray-800);
   border-radius: var(--border-radius);
   margin-bottom: 2rem;
 }
@@ -72,7 +74,7 @@
 .admin-nav a {
   display: block;
   padding: 1rem;
-  color: var(--text-color);
+  color: var(--bs-gray-300);
   text-decoration: none;
   transition: var(--transition);
   border-bottom: 3px solid transparent;
@@ -80,8 +82,9 @@
 
 .admin-nav a:hover,
 .admin-nav a.active {
-  background-color: white;
-  border-bottom-color: var(--primary-color);
+  background-color: var(--bs-gray-700);
+  color: var(--bs-white);
+  border-bottom-color: var(--bs-primary);
 }
 
 @media (max-width: 768px) {
@@ -97,7 +100,7 @@
   
   .admin-nav a:hover,
   .admin-nav a.active {
-    border-left-color: var(--primary-color);
+    border-left-color: var(--bs-primary);
     border-bottom-color: transparent;
   }
 }
@@ -109,7 +112,8 @@
 }
 
 .admin-container {
-  background-color: white;
+  background-color: var(--bs-dark);
+  color: var(--bs-white);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   padding: 2rem;
@@ -119,9 +123,9 @@
 .admin-section-title {
   margin-bottom: 1.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--light-color);
+  border-bottom: 2px solid var(--bs-gray-700);
   font-size: 1.5rem;
-  color: var(--secondary-color);
+  color: var(--bs-info);
 }
 
 /* Tabs for admin panels */
@@ -131,7 +135,7 @@
 
 .tab-nav {
   display: flex;
-  background-color: var(--light-color);
+  background-color: var(--bs-gray-800);
   border-radius: var(--border-radius) var(--border-radius) 0 0;
   overflow: hidden;
 }
@@ -142,17 +146,18 @@
   background-color: transparent;
   border: none;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--bs-gray-300);
   transition: var(--transition);
 }
 
 .tab-link.active {
-  background-color: white;
-  color: var(--primary-color);
+  background-color: var(--bs-gray-700);
+  color: var(--bs-white);
 }
 
 .tab-content {
-  background-color: white;
+  background-color: var(--bs-dark);
+  color: var(--bs-white);
   padding: 2rem;
   border-radius: 0 0 var(--border-radius) var(--border-radius);
   box-shadow: var(--box-shadow);
@@ -208,7 +213,8 @@
 }
 
 .user-approval-card {
-  background-color: white;
+  background-color: var(--bs-dark);
+  color: var(--bs-white);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   padding: 1.5rem;
@@ -226,16 +232,17 @@
   font-weight: bold;
   font-size: 1.2rem;
   margin-bottom: 0.25rem;
+  color: var(--bs-white);
 }
 
 .user-email {
-  color: #777;
+  color: var(--bs-gray-300);
   margin-bottom: 0.5rem;
 }
 
 .user-registered {
   font-size: 0.9rem;
-  color: #999;
+  color: var(--bs-gray-500);
 }
 
 .approval-actions {
@@ -300,7 +307,8 @@
 }
 
 .interest-item {
-  background-color: white;
+  background-color: var(--bs-gray-800);
+  color: var(--bs-white);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
   padding: 1.5rem;
@@ -312,10 +320,11 @@
 .interest-name {
   font-weight: bold;
   margin-bottom: 0.5rem;
+  color: var(--bs-white);
 }
 
 .interest-description {
-  color: #777;
+  color: var(--bs-gray-300);
   margin-bottom: 1rem;
   flex: 1;
 }
