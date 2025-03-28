@@ -56,11 +56,20 @@ csrf.init_app(app)
 
 with app.app_context():
     # Import models after app is created to avoid circular imports
-    from models import User, Course, Lesson, Interest, UserInterest, CourseInterest, UserCourse
+    from models import User, Course, Lesson, Interest, UserInterest, CourseInterest, UserCourse, ApiKey
     
     # Create all database tables
     db.create_all()
     logger.debug("Database tables created")
+    
+    # Load API keys from database to environment variables
+    try:
+        openai_key = ApiKey.query.filter_by(service_name='openai').first()
+        if openai_key and openai_key.key_value and not os.environ.get('OPENAI_API_KEY'):
+            os.environ['OPENAI_API_KEY'] = openai_key.key_value
+            logger.info(f"Loaded OpenAI API key from database")
+    except Exception as e:
+        logger.error(f"Error loading API keys from database: {e}")
     
     # Import routes after database is set up
     import routes  # Import routes at the end to avoid circular imports

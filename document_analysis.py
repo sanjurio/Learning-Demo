@@ -8,20 +8,29 @@ from docx import Document
 from nltk.tokenize import sent_tokenize
 from werkzeug.utils import secure_filename
 
-# Configure OpenAI API (will need API key from environment)
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+# Don't initialize client at module level
+# Will create client on demand in functions that need it
+client = None
 
-# Update OpenAI client if API key is set
-if openai.api_key:
-    try:
-        client = openai.OpenAI(api_key=openai.api_key)
-        print(f"OpenAI client initialized with API key: {openai.api_key[:5]}...{openai.api_key[-4:]}")
-    except Exception as e:
-        print(f"Error initializing OpenAI client: {e}")
-        client = None
-else:
-    print("No OpenAI API key found in environment variables")
-    client = None
+def get_openai_client():
+    """Get OpenAI client with current API key"""
+    global client
+    
+    # Get API key from environment
+    api_key = os.environ.get("OPENAI_API_KEY")
+    
+    # If we have an API key, create or update the client
+    if api_key:
+        try:
+            client = openai.OpenAI(api_key=api_key)
+            print(f"OpenAI client initialized with API key: {api_key[:5]}...{api_key[-4:]}")
+            return client
+        except Exception as e:
+            print(f"Error initializing OpenAI client: {e}")
+            return None
+    else:
+        print("No OpenAI API key found in environment variables")
+        return None
 
 def extract_text_from_pdf(file_stream):
     """Extract text from a PDF file"""
@@ -123,8 +132,11 @@ def summarize_text(text, max_length=500):
 
 def analyze_with_ai(text, prompt_type="summary"):
     """Analyze text using OpenAI API"""
-    if not openai.api_key or not client:
-        print("Cannot analyze with AI: API key or client not available")
+    # Get a client with the current API key
+    client = get_openai_client()
+    
+    if not client:
+        print("Cannot analyze with AI: No OpenAI API key available")
         return None
     
     try:
