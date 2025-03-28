@@ -9,39 +9,25 @@
         </div>
     </div>
 
-    {% if not api_key_configured %}
-    <div class="alert alert-warning">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        <strong>OpenAI API Key Not Configured</strong>
-        <p class="mb-0 mt-2">
-            {% if current_user.is_admin %}
-            The OpenAI API key is not configured. Please go to 
-            <a href="{{ url_for('admin_api_keys') }}">API Keys</a> page to configure it.
-            <br><br>
-            <button id="test-connection-btn" class="btn btn-sm btn-info">Test API Connection</button>
-            <div id="connection-test-results" class="mt-3 d-none">
-                <h6>API Connection Test Results:</h6>
-                <pre class="bg-dark text-light p-3 rounded" style="max-height: 200px; overflow-y: auto;"></pre>
+    <div id="api-status" class="alert mb-4">
+        <div class="d-flex align-items-center mb-2">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
-            {% else %}
-            The OpenAI API key is not configured. Please contact an administrator to configure it.
-            {% endif %}
-        </p>
+            <strong>Checking API configuration...</strong>
+        </div>
+        <div id="api-status-message"></div>
     </div>
-    {% elif current_user.is_admin %}
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle me-2"></i>
-        <strong>OpenAI API Key Configured</strong>
-        <p class="mb-0 mt-2">
-            The OpenAI API key is configured. If you're experiencing issues with document analysis, 
-            you can run a diagnostic test to check the connection.
-            <br><br>
-            <button id="test-connection-btn" class="btn btn-sm btn-info">Test API Connection</button>
-            <div id="connection-test-results" class="mt-3 d-none">
-                <h6>API Connection Test Results:</h6>
-                <pre class="bg-dark text-light p-3 rounded" style="max-height: 200px; overflow-y: auto;"></pre>
-            </div>
-        </p>
+    
+    {% if current_user.is_admin %}
+    <div class="mb-4">
+        <button id="test-connection-btn" class="btn btn-info">
+            <i class="bi bi-wrench me-1"></i> Test API Connection
+        </button>
+        <div id="connection-test-results" class="mt-3 d-none">
+            <h5 class="small fw-bold">API Connection Test Results:</h5>
+            <pre class="bg-dark text-light p-3 rounded small" style="max-height: 200px; overflow-y: auto;"></pre>
+        </div>
     </div>
     {% endif %}
 
@@ -125,6 +111,81 @@ document.addEventListener('DOMContentLoaded', function() {
     const summaryContent = document.getElementById('summary-content');
     const questionsContent = document.getElementById('questions-content');
     
+    // API status elements
+    const apiStatus = document.getElementById('api-status');
+    
+    // Check API configuration status
+    function checkApiStatus() {
+        // Determine which endpoint to use based on admin status
+        const isAdmin = document.body.classList.contains('admin');
+        const endpoint = isAdmin ? '/api/test-openai-connection' : '/api/check-api-config';
+        
+        // Show loading state
+        apiStatus.className = 'alert alert-info mb-4';
+        apiStatus.innerHTML = `
+            <div class="d-flex align-items-center mb-2">
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <strong>Checking API configuration...</strong>
+            </div>
+        `;
+        
+        // Fetch API status
+        fetch(endpoint)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // API is configured and working
+                    apiStatus.className = 'alert alert-success mb-4';
+                    apiStatus.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                            <div>
+                                <strong>API connection is working correctly</strong>
+                                <p class="mb-0 small">You can now analyze documents.</p>
+                            </div>
+                        </div>
+                    `;
+                    if (analyzeBtn) analyzeBtn.disabled = false;
+                } else {
+                    // API is not configured or not working
+                    apiStatus.className = 'alert alert-warning mb-4';
+                    apiStatus.innerHTML = `
+                        <div class="d-flex">
+                            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                            <div>
+                                <strong>API configuration issue</strong>
+                                <p class="mb-0">${data.message || 'The OpenAI API is not configured correctly.'}</p>
+                                ${isAdmin ? 
+                                    '<p class="mb-1 mt-2">Please set up your OpenAI API key in the <a href="/admin/api-keys">API Keys</a> section to use this feature.</p>' : 
+                                    '<p class="mb-1 mt-2">Please contact an administrator to set up this feature.</p>'
+                                }
+                            </div>
+                        </div>
+                    `;
+                    if (analyzeBtn) analyzeBtn.disabled = true;
+                }
+            })
+            .catch(error => {
+                // Error checking API status
+                apiStatus.className = 'alert alert-danger mb-4';
+                apiStatus.innerHTML = `
+                    <div class="d-flex">
+                        <i class="bi bi-x-circle-fill me-2 fs-5"></i>
+                        <div>
+                            <strong>Error checking API status</strong>
+                            <p class="mb-0">${error.message || 'An error occurred while checking the API connection.'}</p>
+                        </div>
+                    </div>
+                `;
+                if (analyzeBtn) analyzeBtn.disabled = true;
+            });
+    }
+    
+    // Check API status when page loads
+    checkApiStatus();
+    
     // API connection test elements
     const testConnectionBtn = document.getElementById('test-connection-btn');
     const connectionTestResults = document.getElementById('connection-test-results');
@@ -154,6 +215,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         connectionTestOutput.classList.add('text-danger');
                         connectionTestOutput.classList.remove('text-success');
                     }
+                    
+                    // Update overall API status after the test
+                    checkApiStatus();
                 })
                 .catch(error => {
                     // Show error
@@ -165,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .finally(() => {
                     // Reset button state
                     testConnectionBtn.disabled = false;
-                    testConnectionBtn.textContent = 'Test API Connection';
+                    testConnectionBtn.innerHTML = '<i class="bi bi-wrench me-1"></i> Test API Connection';
                 });
         });
     }

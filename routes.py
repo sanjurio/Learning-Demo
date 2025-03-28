@@ -1250,16 +1250,26 @@ def document_analysis():
                           title='Document Analysis',
                           api_key_configured=api_key_configured)
 
+# Add a simple API endpoint to check if OpenAI API key is configured
+@app.route('/api/check-api-config', methods=['GET'])
+@login_required
+def check_api_config():
+    """Simple endpoint to check if OpenAI API key is configured"""
+    env_key = os.environ.get('OPENAI_API_KEY')
+    openai_key = ApiKey.query.filter_by(service_name='openai').first()
+    
+    return jsonify({
+        'success': bool(env_key or openai_key),
+        'message': 'API key is configured' if (env_key or openai_key) else 'OpenAI API key is not configured'
+    })
+
 # Add a diagnostic route for testing OpenAI API connectivity
 @app.route('/api/test-openai-connection', methods=['GET'])
 @login_required
 def test_openai_connection():
     """Diagnostic endpoint to test OpenAI API connectivity"""
-    if not current_user.is_admin:
-        return jsonify({
-            'success': False,
-            'message': 'Admin access required for this diagnostic tool'
-        }), 403
+    # Only admins can see full diagnostic information
+    admin_view = current_user.is_admin
         
     try:
         app.logger.info("Testing OpenAI API connection")
