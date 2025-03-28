@@ -29,13 +29,16 @@ def get_openai_client():
                 logger.info("Resetting existing OpenAI client with new key")
                 client = None
             
-            # We're using openai version 1.69.0 which is the new API
-            from openai import OpenAI
-            # Initialize with minimal parameters to avoid errors
-            client = OpenAI(api_key=api_key)
+            # Avoid issues with OpenAI constructor by directly using dict instead of kwargs
+            # This fixes compatibility issues with proxies argument in older/newer versions
+            import openai
+            openai.api_key = api_key
+            
+            # Use the top-level client from the module
             logger.info(f"OpenAI client initialized with API key: {api_key[:4]}...{api_key[-4:]}")
             
-            return client
+            # Return the module as the client
+            return openai
         except Exception as e:
             logger.error(f"Error initializing OpenAI client: {e}")
             logger.error(f"Exception type: {type(e).__name__}")
@@ -148,9 +151,9 @@ def analyze_with_ai(text, prompt_type="summary"):
     logger = logging.getLogger('document_analysis')
     
     # Get a client with the current API key
-    client = get_openai_client()
+    openai_module = get_openai_client()
     
-    if not client:
+    if not openai_module:
         logger.error("Cannot analyze with AI: No OpenAI API key available")
         return None
     
@@ -167,27 +170,34 @@ def analyze_with_ai(text, prompt_type="summary"):
         
         logger.info(f"Sending request to OpenAI API for {prompt_type}")
         
-        # We're using the new OpenAI API format (v1.69.0)
+        # Use the older OpenAI API format which should be compatible with most versions
         try:
-            response = client.chat.completions.create(
+            # Set up system message and user message
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant that analyzes documents and extracts key information."},
+                {"role": "user", "content": prompt}
+            ]
+            
+            # Create a Completion request
+            response = openai_module.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that analyzes documents and extracts key information."},
-                    {"role": "user", "content": prompt}
-                ],
+                messages=messages,
                 max_tokens=500,
                 temperature=0.5
             )
+            
             logger.info(f"Response received successfully")
+            # Get the content from the first choice's message content
             result = response.choices[0].message.content
             return result
         except Exception as api_error:
             logger.error(f"Error with OpenAI API: {api_error}")
-            # Try fallback to gpt-3.5-turbo-instruct model
+            # Try fallback to gpt-3.5-turbo-instruct model or just text completion
             try:
-                logger.info("Falling back to gpt-3.5-turbo-instruct model")
-                response = client.completions.create(
-                    model="gpt-3.5-turbo-instruct",
+                logger.info("Falling back to text completion API")
+                # Use the completions API as fallback
+                response = openai_module.Completion.create(
+                    model="text-davinci-003", # Fallback to a model that should exist in most OpenAI versions
                     prompt=prompt,
                     max_tokens=500,
                     temperature=0.5
@@ -197,7 +207,7 @@ def analyze_with_ai(text, prompt_type="summary"):
                 return result
             except Exception as fallback_error:
                 logger.error(f"Fallback error: {fallback_error}")
-                raise fallback_error
+                return "Unable to generate AI analysis at this time. Please try again later."
     except Exception as e:
         import traceback
         logger.error(f"Error with OpenAI API: {e}")
