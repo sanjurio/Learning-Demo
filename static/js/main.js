@@ -1,24 +1,8 @@
 // Main JavaScript for AI Learning Platform
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize mobile navigation toggler
-    const navbarToggler = document.querySelector('.navbar-toggler');
-    const navbarCollapse = document.querySelector('.navbar-collapse');
-    
-    if (navbarToggler && navbarCollapse) {
-        navbarToggler.addEventListener('click', function() {
-            navbarCollapse.classList.toggle('show');
-        });
-    }
-    
-    // Close the mobile menu when clicking outside
-    document.addEventListener('click', function(event) {
-        if (navbarCollapse && navbarCollapse.classList.contains('show') && 
-            !navbarCollapse.contains(event.target) && 
-            !navbarToggler.contains(event.target)) {
-            navbarCollapse.classList.remove('show');
-        }
-    });
+    // We don't need to manually handle the navbar toggler
+    // Bootstrap will handle it with data-bs-toggle="collapse"
     
     // Initialize tabs if present
     const tabLinks = document.querySelectorAll('.tab-link');
