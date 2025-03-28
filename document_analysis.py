@@ -28,43 +28,11 @@ def get_openai_client():
             if client:
                 logger.info("Resetting existing OpenAI client with new key")
                 client = None
-                
-            # Check which version of openai is installed
-            if hasattr(openai, 'OpenAI'):
-                # New version (>=1.0.0)
-                client = openai.OpenAI(api_key=api_key)
-                logger.info(f"OpenAI client (new API >=1.0.0) initialized with API key: {api_key[:4]}...{api_key[-4:]}")
-                
-                # Verify the client works by making a small test request
-                try:
-                    logger.info("Testing OpenAI client with a minimal request")
-                    response = client.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[{"role": "user", "content": "Hello"}],
-                        max_tokens=5
-                    )
-                    logger.info(f"Test request successful: {response.choices[0].message.content}")
-                except Exception as test_error:
-                    logger.warning(f"Test request failed with error: {test_error}")
-                    # Continue anyway as the next real request might work with different parameters
-            else:
-                # Legacy version (<1.0.0)
-                openai.api_key = api_key
-                client = openai
-                logger.info(f"OpenAI client (legacy API <1.0.0) initialized with API key: {api_key[:4]}...{api_key[-4:]}")
-                
-                # Verify the client works by making a small test request
-                try:
-                    logger.info("Testing legacy OpenAI client with a minimal request")
-                    response = client.ChatCompletion.create(
-                        model="gpt-3.5-turbo",
-                        messages=[{"role": "user", "content": "Hello"}],
-                        max_tokens=5
-                    )
-                    logger.info(f"Test request successful: {response.choices[0].message['content']}")
-                except Exception as test_error:
-                    logger.warning(f"Legacy test request failed with error: {test_error}")
-                    # Continue anyway as the next real request might work with different parameters
+            
+            # We're using openai version 1.69.0 which is the new API
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
+            logger.info(f"OpenAI client initialized with API key: {api_key[:4]}...{api_key[-4:]}")
             
             return client
         except Exception as e:
@@ -197,74 +165,37 @@ def analyze_with_ai(text, prompt_type="summary"):
         
         logger.info(f"Sending request to OpenAI API for {prompt_type}")
         
-        # Check which version of the client we're using
-        if hasattr(client, 'chat') and hasattr(client.chat, 'completions'):
-            # New version (>=1.0.0)
-            logger.info("Using new OpenAI API format (>=1.0.0)")
+        # We're using the new OpenAI API format (v1.69.0)
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant that analyzes documents and extracts key information."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.5
+            )
+            logger.info(f"Response received successfully")
+            result = response.choices[0].message.content
+            return result
+        except Exception as api_error:
+            logger.error(f"Error with OpenAI API: {api_error}")
+            # Try fallback to gpt-3.5-turbo-instruct model
             try:
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that analyzes documents and extracts key information."},
-                        {"role": "user", "content": prompt}
-                    ],
+                logger.info("Falling back to gpt-3.5-turbo-instruct model")
+                response = client.completions.create(
+                    model="gpt-3.5-turbo-instruct",
+                    prompt=prompt,
                     max_tokens=500,
                     temperature=0.5
                 )
-                logger.info(f"Response received with status code: 200")
-                result = response.choices[0].message.content
+                logger.info(f"Fallback response received successfully")
+                result = response.choices[0].text
                 return result
-            except Exception as api_error:
-                logger.error(f"Error with new OpenAI API format: {api_error}")
-                # Try fallback to gpt-3.5-turbo-instruct if available
-                try:
-                    logger.info("Falling back to gpt-3.5-turbo-instruct model")
-                    response = client.completions.create(
-                        model="gpt-3.5-turbo-instruct",
-                        prompt=prompt,
-                        max_tokens=500,
-                        temperature=0.5
-                    )
-                    logger.info(f"Fallback response received")
-                    return response.choices[0].text
-                except Exception as fallback_error:
-                    logger.error(f"Fallback error: {fallback_error}")
-                    raise fallback_error
-        else:
-            # Legacy version (<1.0.0)
-            logger.info("Using legacy OpenAI API format (<1.0.0)")
-            try:
-                response = client.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that analyzes documents and extracts key information."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=500,
-                    temperature=0.5
-                )
-                logger.info(f"Response received from legacy API")
-                result = response.choices[0].message['content']
-                return result
-            except Exception as legacy_error:
-                logger.error(f"Error with legacy OpenAI API: {legacy_error}")
-                # Try fallback to older completion API
-                try:
-                    logger.info("Falling back to legacy completion API")
-                    response = client.Completion.create(
-                        engine="text-davinci-003",  # Use older engine for compatibility
-                        prompt=prompt,
-                        max_tokens=500,
-                        temperature=0.5
-                    )
-                    logger.info(f"Fallback response received from legacy completion API")
-                    return response.choices[0].text
-                except Exception as legacy_fallback_error:
-                    logger.error(f"Legacy fallback error: {legacy_fallback_error}")
-                    raise legacy_fallback_error
-        
-        logger.error("No API format was used - this shouldn't happen")
-        return None
+            except Exception as fallback_error:
+                logger.error(f"Fallback error: {fallback_error}")
+                raise fallback_error
     except Exception as e:
         import traceback
         logger.error(f"Error with OpenAI API: {e}")
