@@ -1230,24 +1230,162 @@ def admin_api_keys():
 def document_analysis():
     """Render the document analysis chatbot page"""
     # Check if OpenAI API key is configured
+    app.logger.info("Loading document analysis page")
     
+    # Check for API key in environment or database
+    env_key = os.environ.get('OPENAI_API_KEY')
     openai_key = ApiKey.query.filter_by(service_name='openai').first()
-    api_key_configured = bool(openai_key)
     
     # If key exists in database but not in environment, set it
-    if openai_key and not os.environ.get('OPENAI_API_KEY'):
+    if openai_key and not env_key:
+        app.logger.info(f"Setting OpenAI API key from database to environment")
         os.environ['OPENAI_API_KEY'] = openai_key.key_value
+        env_key = openai_key.key_value
+    
+    # Check if we have any key configured
+    api_key_configured = bool(env_key) or bool(openai_key)
+    app.logger.info(f"API key configured: {api_key_configured}")
     
     return render_template('document_analysis.html', 
                           title='Document Analysis',
                           api_key_configured=api_key_configured)
+
+# Add a diagnostic route for testing OpenAI API connectivity
+@app.route('/api/test-openai-connection', methods=['GET'])
+@login_required
+def test_openai_connection():
+    """Diagnostic endpoint to test OpenAI API connectivity"""
+    if not current_user.is_admin:
+        return jsonify({
+            'success': False,
+            'message': 'Admin access required for this diagnostic tool'
+        }), 403
+        
+    try:
+        app.logger.info("Testing OpenAI API connection")
+        
+        # Check for API key in environment and database
+        env_key = os.environ.get('OPENAI_API_KEY')
+        openai_key = ApiKey.query.filter_by(service_name='openai').first()
+        
+        # Report key status
+        if env_key:
+            app.logger.info(f"Found OpenAI API key in environment: {env_key[:4]}...{env_key[-4:]}")
+        else:
+            app.logger.warning("No OpenAI API key found in environment")
+            
+        if openai_key:
+            app.logger.info(f"Found OpenAI API key in database: {openai_key.key_value[:4]}...{openai_key.key_value[-4:]}")
+        else:
+            app.logger.warning("No OpenAI API key found in database")
+        
+        # Set from database if needed
+        if openai_key and not env_key:
+            app.logger.info("Setting OpenAI API key from database to environment")
+            os.environ['OPENAI_API_KEY'] = openai_key.key_value
+            env_key = openai_key.key_value
+            
+        # Check if we have any key
+        if not env_key and not openai_key:
+            return jsonify({
+                'success': False,
+                'message': 'No OpenAI API key found in environment or database',
+                'details': {
+                    'env_key': False,
+                    'db_key': False
+                }
+            })
+            
+        # Import here to avoid circular imports
+        from document_analysis import get_openai_client
+        
+        # Test connection
+        client = get_openai_client()
+        if not client:
+            return jsonify({
+                'success': False,
+                'message': 'Failed to initialize OpenAI client',
+                'details': {
+                    'env_key': bool(env_key),
+                    'db_key': bool(openai_key)
+                }
+            })
+        
+        # Try a simple test request
+        test_successful = False
+        error_message = None
+        
+        try:
+            app.logger.info("Testing OpenAI API with a simple request")
+            
+            # Check which version of the client we have
+            if hasattr(client, 'chat') and hasattr(client.chat, 'completions'):
+                # New version (>=1.0.0)
+                app.logger.info("Using new OpenAI API format")
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": "Hello, this is a test message. Please respond with 'API connection is working'."}
+                    ],
+                    max_tokens=20
+                )
+                result = response.choices[0].message.content
+                test_successful = True
+                app.logger.info(f"Test successful: {result}")
+            else:
+                # Legacy version (<1.0.0)
+                app.logger.info("Using legacy OpenAI API format")
+                response = client.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": "Hello, this is a test message. Please respond with 'API connection is working'."}
+                    ],
+                    max_tokens=20
+                )
+                result = response.choices[0].message['content']
+                test_successful = True
+                app.logger.info(f"Test successful: {result}")
+                
+        except Exception as test_error:
+            app.logger.error(f"API test failed: {str(test_error)}")
+            error_message = str(test_error)
+            result = None
+            
+        return jsonify({
+            'success': test_successful,
+            'message': 'OpenAI API connection test completed',
+            'details': {
+                'env_key': bool(env_key),
+                'db_key': bool(openai_key),
+                'client_initialized': bool(client),
+                'test_response': result,
+                'error_message': error_message
+            }
+        })
+        
+    except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
+        app.logger.error(f"Error in OpenAI API test endpoint: {str(e)}")
+        app.logger.error(f"Traceback: {error_traceback}")
+        return jsonify({
+            'success': False,
+            'message': f'An error occurred during OpenAI API test: {str(e)}',
+            'traceback': error_traceback
+        }), 500
+
 
 @app.route('/api/analyze-document', methods=['POST'])
 @login_required
 def api_analyze_document():
     """API endpoint to analyze an uploaded document"""
     try:
+        app.logger.info("Document analysis API called")
+        
         if 'file' not in request.files:
+            app.logger.warning("No file uploaded in request")
             return jsonify({
                 'success': False,
                 'message': 'No file uploaded'
@@ -1256,6 +1394,7 @@ def api_analyze_document():
         file = request.files['file']
         
         if file.filename == '':
+            app.logger.warning("Empty filename in uploaded file")
             return jsonify({
                 'success': False,
                 'message': 'No file selected'
@@ -1264,28 +1403,49 @@ def api_analyze_document():
         # Check if the file is one of the allowed types
         allowed_extensions = {'pdf', 'docx', 'txt'}
         if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            app.logger.warning(f"Invalid file format: {file.filename}")
             return jsonify({
                 'success': False,
                 'message': 'Invalid file format. Please upload a PDF, DOCX, or TXT file.'
             }), 400
         
         # Make sure OpenAI API key is in environment
+        app.logger.info("Checking for OpenAI API key")
         openai_key = ApiKey.query.filter_by(service_name='openai').first()
-        if openai_key and not os.environ.get('OPENAI_API_KEY'):
+        
+        # Check environment variable
+        env_key = os.environ.get('OPENAI_API_KEY')
+        if env_key:
+            app.logger.info(f"Found OpenAI API key in environment: {env_key[:4]}...{env_key[-4:]}")
+        else:
+            app.logger.warning("No OpenAI API key found in environment")
+        
+        # Set from database if needed
+        if openai_key and not env_key:
+            app.logger.info(f"Setting OpenAI API key from database: {openai_key.key_value[:4]}...{openai_key.key_value[-4:]}")
             os.environ['OPENAI_API_KEY'] = openai_key.key_value
-            print(f"Set OpenAI API key from database: {openai_key.key_value[:5]}...{openai_key.key_value[-4:]}")
+        elif not openai_key and not env_key:
+            app.logger.error("No OpenAI API key found in database or environment")
+            return jsonify({
+                'success': False,
+                'message': 'OpenAI API key is not configured. Please contact the administrator.'
+            }), 500
         
         # Read file into memory
         file_bytes = io.BytesIO(file.read())
+        app.logger.info(f"Analyzing document: {file.filename}")
         
         # Analyze the document
-        print(f"Analyzing document: {file.filename}")
         result = analyze_document(file_bytes, file.filename)
-        print(f"Analysis result: {result['success']}")
+        app.logger.info(f"Analysis result success: {result.get('success', False)}")
+        app.logger.debug(f"Full analysis result: {result}")
         
         return jsonify(result)
     except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
         app.logger.error(f"Error in document analysis endpoint: {str(e)}")
+        app.logger.error(f"Traceback: {error_traceback}")
         return jsonify({
             'success': False,
             'message': f'An error occurred during document analysis: {str(e)}'
