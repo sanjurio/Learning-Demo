@@ -69,7 +69,8 @@ def extract_text(file_stream, filename):
 def get_important_sentences(text, num_sentences=5):
     """Extract important sentences based on word frequency"""
     try:
-        sentences = sent_tokenize(text)
+        # Use standard punkt tokenizer
+        sentences = text.split('. ')  # Simple sentence splitting
         words = word_tokenize(text.lower())
         stop_words = set(stopwords.words('english'))
         word_freq = FreqDist(word for word in words if word.isalnum() and word not in stop_words)
