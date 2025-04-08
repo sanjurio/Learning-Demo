@@ -131,6 +131,18 @@
     </footer>
     
     {% if current_user.is_authenticated %}
+            
+            <div id="api-key-status" class="my-3">
+                <!-- This will be populated by JavaScript that checks the API key status -->
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="ms-2">Checking API configuration...</span>
+            </div>
+            
+            {% if current_user.is_admin %}
+            <div class="mb-3">
+                <button id="test-connection-btn" class="btn btn-sm btn-info">Test API Connection</button>
                 <div id="connection-test-results" class="mt-2 d-none">
                     <h6 class="small">API Connection Test Results:</h6>
                     <pre class="bg-dark text-light p-2 rounded small" style="max-height: 150px; overflow-y: auto;"></pre>
