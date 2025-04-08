@@ -141,10 +141,11 @@ def generate_questions(text):
         questions = []
 
         for sentence in sentences:
-            words = sentence.split()
-            pos_tags = nltk.pos_tag(words)
+            try:
+                words = sentence.split()
+                pos_tags = nltk.pos_tag(words)
 
-            if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
+                if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
                 sentence = re.sub(r'[.!?]$', '', sentence)
                 if any(word.lower() in ['is', 'are', 'was', 'were']
                        for word in words):
