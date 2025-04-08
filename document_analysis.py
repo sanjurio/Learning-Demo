@@ -102,12 +102,8 @@ def generate_questions(text):
         words = word_tokenize(sentence)
         pos_tags = nltk.pos_tag(words)
         
-        # Look for sentences with named entities or important information
         if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
-            # Remove punctuation from the end of the sentence
             sentence = re.sub(r'[.!?]$', '', sentence)
-            
-            # Create different types of questions
             if any(word.lower() in ['is', 'are', 'was', 'were'] for word in words):
                 question = f"What {words[0].lower()} {' '.join(words[1:])}?"
             else:
