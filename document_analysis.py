@@ -168,7 +168,7 @@ def analyze_document(file_stream, filename):
                 "message": "No text content found in the document"
             }
         
-        # Generate summary and questions
+        # Generate summary and questions using pure Python/NLTK
         summary = generate_summary(text)
         questions = generate_questions(text)
         
