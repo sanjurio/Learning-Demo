@@ -9,8 +9,16 @@ from nltk.corpus import stopwords
 from nltk.probability import FreqDist
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 import nltk
-nltk.data.path.append('./nltk_data')
 
+nltk_data_path = './nltk_data'
+os.makedirs(nltk_data_path, exist_ok=True)
+nltk.data.path.append(nltk_data_path)
+
+# Only download 'punkt' and ignore 'punkt_tab'
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt', download_dir=nltk_data_path)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
