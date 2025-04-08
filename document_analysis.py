@@ -1,4 +1,3 @@
-
 import os
 import re
 import io
@@ -56,7 +55,7 @@ def extract_text_from_txt(file_stream):
 def extract_text(file_stream, filename):
     """Extract text from various file types"""
     file_ext = os.path.splitext(filename)[1].lower()
-    
+
     if file_ext == '.pdf':
         return extract_text_from_pdf(file_stream)
     elif file_ext == '.docx':
@@ -74,7 +73,7 @@ def get_important_sentences(text, num_sentences=5):
         words = word_tokenize(text.lower())
         stop_words = set(stopwords.words('english'))
         word_freq = FreqDist(word for word in words if word.isalnum() and word not in stop_words)
-        
+
         sentence_scores = {}
         for sentence in sentences:
             score = 0
@@ -83,7 +82,7 @@ def get_important_sentences(text, num_sentences=5):
                 if word in word_freq:
                     score += word_freq[word]
             sentence_scores[sentence] = score / len(words) if words else 0
-        
+
         important_sentences = sorted(sentence_scores.items(), key=lambda x: x[1], reverse=True)[:num_sentences]
         return [sentence for sentence, score in important_sentences]
     except Exception as e:
@@ -95,16 +94,16 @@ def generate_summary(text, max_length=500):
     try:
         if not text:
             return "No text content found in the document."
-        
+
         important_sentences = get_important_sentences(text)
         if not important_sentences:
             return "Could not generate summary from the document content."
-            
+
         summary = ' '.join(important_sentences)
-        
+
         if len(summary) > max_length:
             summary = summary[:max_length].rsplit(' ', 1)[0] + '...'
-        
+
         return summary
     except Exception as e:
         logger.error(f"Error generating summary: {str(e)}")
@@ -115,32 +114,32 @@ def generate_questions(text):
     try:
         sentences = sent_tokenize(text)
         questions = []
-        
+
         for sentence in sentences:
             words = word_tokenize(sentence)
             pos_tags = nltk.pos_tag(words)
-            
+
             if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
                 sentence = re.sub(r'[.!?]$', '', sentence)
                 if any(word.lower() in ['is', 'are', 'was', 'were'] for word in words):
                     question = f"What {words[0].lower()} {' '.join(words[1:])}?"
                 else:
                     question = f"What can you tell me about {sentence}?"
-                
+
                 questions.append({
                     "question": question,
                     "answer": sentence
                 })
-            
+
             if len(questions) >= 3:
                 break
-        
+
         if not questions:
             questions = [{
                 "question": "What is the main topic of this document?",
                 "answer": generate_summary(text, 200)
             }]
-        
+
         return questions
     except Exception as e:
         logger.error(f"Error generating questions: {str(e)}")
@@ -150,35 +149,35 @@ def analyze_document(file_stream, filename):
     """Main function to analyze a document"""
     try:
         logger.info(f"Starting analysis of document: {filename}")
-        
+
         # Extract text from the document
         text = extract_text(file_stream, filename)
-        
+
         if text is None:
             logger.error("Failed to extract text from document")
             return {
                 "success": False,
                 "message": "Failed to extract text from the document"
             }
-        
+
         if not text.strip():
             logger.error("Extracted text is empty")
             return {
                 "success": False,
                 "message": "No text content found in the document"
             }
-        
+
         # Generate summary and questions using pure Python/NLTK
         summary = generate_summary(text)
         questions = generate_questions(text)
-        
+
         logger.info("Document analysis completed successfully")
         return {
             "success": True,
             "summary": summary,
             "questions": questions
         }
-        
+
     except Exception as e:
         logger.error(f"Error in document analysis: {str(e)}")
         return {
