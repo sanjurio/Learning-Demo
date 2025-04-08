@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // We don't need to manually handle the navbar toggler
     // Bootstrap will handle it with data-bs-toggle="collapse"
-    
+
     // Initialize tabs if present
     const tabLinks = document.querySelectorAll('.tab-link');
     if (tabLinks.length > 0) {
@@ -11,15 +11,15 @@ document.addEventListener('DOMContentLoaded', function() {
             tab.addEventListener('click', function() {
                 // Remove active class from all tabs
                 tabLinks.forEach(t => t.classList.remove('active'));
-                
+
                 // Add active class to clicked tab
                 this.classList.add('active');
-                
+
                 // Hide all tab panes
                 const tabContentId = this.getAttribute('data-tab');
                 const tabPanes = document.querySelectorAll('.tab-pane');
                 tabPanes.forEach(pane => pane.classList.remove('active'));
-                
+
                 // Show the selected tab pane
                 const activePane = document.getElementById(tabContentId);
                 if (activePane) {
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
+
     // Handle flash messages auto-close
     const flashMessages = document.querySelectorAll('.alert');
     flashMessages.forEach(message => {
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 500);
             }, 5000);
         }
-        
+
         // Add close button functionality
         const closeBtn = message.querySelector('.close');
         if (closeBtn) {
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-    
+
     // Course card equalizer
     const equalizeCardHeights = () => {
         const courseCards = document.querySelectorAll('.course-card');
@@ -62,24 +62,24 @@ document.addEventListener('DOMContentLoaded', function() {
             courseCards.forEach(card => {
                 card.style.height = 'auto';
             });
-            
+
             // Get the tallest card height
             let maxHeight = 0;
             courseCards.forEach(card => {
                 maxHeight = Math.max(maxHeight, card.offsetHeight);
             });
-            
+
             // Set all cards to the same height
             courseCards.forEach(card => {
                 card.style.height = maxHeight + 'px';
             });
         }
     };
-    
+
     // Initialize card heights and readjust on window resize
     equalizeCardHeights();
     window.addEventListener('resize', equalizeCardHeights);
-    
+
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
+
     // Initialize tooltips if Bootstrap is available
     if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     }
-    
+
     // Initialize popovers if Bootstrap is available
     if (typeof bootstrap !== 'undefined' && bootstrap.Popover) {
         const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return new bootstrap.Popover(popoverTriggerEl);
         });
     }
-    
+
     // Add active class to current nav item based on URL
     const currentUrl = window.location.pathname;
     document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             link.classList.add('active');
         }
     });
-    
+
     // Handle confirmation dialogs
     document.querySelectorAll('[data-confirm]').forEach(element => {
         element.addEventListener('click', function(e) {
@@ -132,4 +132,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Assuming formData is defined elsewhere and contains the document data
+    // This is the added section to handle CSRF token
+    const analyzeButton = document.getElementById('analyze-button'); //Assumed button ID
+    if(analyzeButton){
+        analyzeButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            const formData = new FormData(document.getElementById('document-form')); //Assumed form ID
+            fetch('/api/analyze-document', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Handle the response from the server
+                console.log('Document analysis result:', data);
+            })
+            .catch(error => {
+                console.error('Error analyzing document:', error);
+            });
+        });
+    }
+
 });

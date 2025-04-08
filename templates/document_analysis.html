@@ -17,6 +17,7 @@
                 </div>
                 <div class="card-body">
                     <form id="document-upload-form" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
                             <label for="document-file" class="form-label">Select Document</label>
                             <input type="file" class="form-control" id="document-file" name="file" accept=".pdf,.docx,.txt">
