@@ -2,13 +2,17 @@ import os
 import re
 import io
 import logging
-import nltk
 from PyPDF2 import PdfReader
 from docx import Document
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from nltk.probability import FreqDist
 from nltk.tokenize.treebank import TreebankWordDetokenizer
+import nltk
+
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -18,6 +22,7 @@ logger = logging.getLogger(__name__)
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('averaged_perceptron_tagger')
+
 
 def extract_text_from_pdf(file_stream):
     """Extract text from a PDF file"""
@@ -31,6 +36,7 @@ def extract_text_from_pdf(file_stream):
         logger.error(f"Error extracting text from PDF: {str(e)}")
         return None
 
+
 def extract_text_from_docx(file_stream):
     """Extract text from a DOCX file"""
     try:
@@ -43,6 +49,7 @@ def extract_text_from_docx(file_stream):
         logger.error(f"Error extracting text from DOCX: {str(e)}")
         return None
 
+
 def extract_text_from_txt(file_stream):
     """Extract text from a text file"""
     try:
@@ -51,6 +58,7 @@ def extract_text_from_txt(file_stream):
     except Exception as e:
         logger.error(f"Error extracting text from text file: {str(e)}")
         return None
+
 
 def extract_text(file_stream, filename):
     """Extract text from various file types"""
@@ -66,14 +74,16 @@ def extract_text(file_stream, filename):
         logger.error(f"Unsupported file format: {file_ext}")
         return None
 
+
 def get_important_sentences(text, num_sentences=5):
     """Extract important sentences based on word frequency"""
     try:
         # Use built-in punkt tokenizer that's already downloaded
-        sentences = nltk.tokenize.punkt.PunktSentenceTokenizer().tokenize(text)
+        sentences = sent_tokenize(text)
         words = word_tokenize(text.lower())
         stop_words = set(stopwords.words('english'))
-        word_freq = FreqDist(word for word in words if word.isalnum() and word not in stop_words)
+        word_freq = FreqDist(word for word in words
+                             if word.isalnum() and word not in stop_words)
 
         sentence_scores = {}
         for sentence in sentences:
@@ -84,11 +94,14 @@ def get_important_sentences(text, num_sentences=5):
                     score += word_freq[word]
             sentence_scores[sentence] = score / len(words) if words else 0
 
-        important_sentences = sorted(sentence_scores.items(), key=lambda x: x[1], reverse=True)[:num_sentences]
+        important_sentences = sorted(sentence_scores.items(),
+                                     key=lambda x: x[1],
+                                     reverse=True)[:num_sentences]
         return [sentence for sentence, score in important_sentences]
     except Exception as e:
         logger.error(f"Error getting important sentences: {str(e)}")
         return []
+
 
 def generate_summary(text, max_length=500):
     """Generate a summary of the text"""
@@ -110,6 +123,7 @@ def generate_summary(text, max_length=500):
         logger.error(f"Error generating summary: {str(e)}")
         return "Error generating summary."
 
+
 def generate_questions(text):
     """Generate questions from the text"""
     try:
@@ -122,15 +136,13 @@ def generate_questions(text):
 
             if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
                 sentence = re.sub(r'[.!?]$', '', sentence)
-                if any(word.lower() in ['is', 'are', 'was', 'were'] for word in words):
+                if any(word.lower() in ['is', 'are', 'was', 'were']
+                       for word in words):
                     question = f"What {words[0].lower()} {' '.join(words[1:])}?"
                 else:
                     question = f"What can you tell me about {sentence}?"
 
-                questions.append({
-                    "question": question,
-                    "answer": sentence
-                })
+                questions.append({"question": question, "answer": sentence})
 
             if len(questions) >= 3:
                 break
@@ -145,6 +157,7 @@ def generate_questions(text):
     except Exception as e:
         logger.error(f"Error generating questions: {str(e)}")
         return [{"question": "Error generating questions", "answer": str(e)}]
+
 
 def analyze_document(file_stream, filename):
     """Main function to analyze a document"""
@@ -173,11 +186,7 @@ def analyze_document(file_stream, filename):
         questions = generate_questions(text)
 
         logger.info("Document analysis completed successfully")
-        return {
-            "success": True,
-            "summary": summary,
-            "questions": questions
-        }
+        return {"success": True, "summary": summary, "questions": questions}
 
     except Exception as e:
         logger.error(f"Error in document analysis: {str(e)}")
