@@ -1419,28 +1419,6 @@ def api_analyze_document():
                 'message': 'Invalid file format. Please upload a PDF, DOCX, or TXT file.'
             }), 400
         
-        # Make sure OpenAI API key is in environment
-        app.logger.info("Checking for OpenAI API key")
-        openai_key = ApiKey.query.filter_by(service_name='openai').first()
-        
-        # Check environment variable
-        env_key = os.environ.get('OPENAI_API_KEY')
-        if env_key:
-            app.logger.info(f"Found OpenAI API key in environment: {env_key[:4]}...{env_key[-4:]}")
-        else:
-            app.logger.warning("No OpenAI API key found in environment")
-        
-        # Set from database if needed
-        if openai_key and not env_key:
-            app.logger.info(f"Setting OpenAI API key from database: {openai_key.key_value[:4]}...{openai_key.key_value[-4:]}")
-            os.environ['OPENAI_API_KEY'] = openai_key.key_value
-        elif not openai_key and not env_key:
-            app.logger.error("No OpenAI API key found in database or environment")
-            return jsonify({
-                'success': False,
-                'message': 'OpenAI API key is not configured. Please contact the administrator.'
-            }), 500
-        
         # Read file into memory
         file_bytes = io.BytesIO(file.read())
         app.logger.info(f"Analyzing document: {file.filename}")

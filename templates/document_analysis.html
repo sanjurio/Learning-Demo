@@ -5,31 +5,9 @@
     <div class="row my-4">
         <div class="col-md-12">
             <h1>Document Analysis</h1>
-            <p class="lead">Upload a document (PDF, DOCX, or TXT) to analyze its content using AI.</p>
+            <p class="lead">Upload a document (PDF, DOCX, or TXT) to analyze its content and generate a summary.</p>
         </div>
     </div>
-
-    <div id="api-status" class="alert mb-4">
-        <div class="d-flex align-items-center mb-2">
-            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <strong>Checking API configuration...</strong>
-        </div>
-        <div id="api-status-message"></div>
-    </div>
-    
-    {% if current_user.is_admin %}
-    <div class="mb-4">
-        <button id="test-connection-btn" class="btn btn-info">
-            <i class="bi bi-wrench me-1"></i> Test API Connection
-        </button>
-        <div id="connection-test-results" class="mt-3 d-none">
-            <h5 class="small fw-bold">API Connection Test Results:</h5>
-            <pre class="bg-dark text-light p-3 rounded small" style="max-height: 200px; overflow-y: auto;"></pre>
-        </div>
-    </div>
-    {% endif %}
 
     <div class="row">
         <div class="col-md-6">
@@ -59,18 +37,16 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        This tool uses AI to analyze documents and extract key information. 
+                        This tool analyzes documents and extracts key information. 
                         Simply upload a document and the system will:
                     </p>
                     <ol>
                         <li>Extract the text content from your document</li>
                         <li>Generate a concise summary of the main points</li>
                         <li>Create a list of questions and answers based on the content</li>
-                        <li>Provide key insights from the document</li>
                     </ol>
                     <p>
-                        This can be useful for quickly understanding long documents, preparing for discussions, 
-                        or creating study materials.
+                        This can be useful for quickly understanding long documents or creating study materials.
                     </p>
                 </div>
             </div>
@@ -88,7 +64,7 @@
                         <h6>Document Summary</h6>
                         <div id="summary-content" class="p-3 bg-light rounded"></div>
                     </div>
-                    
+
                     <div class="mb-4">
                         <h6>Questions & Answers</h6>
                         <div id="questions-content"></div>
@@ -110,194 +86,53 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultsCard = document.getElementById('results-card');
     const summaryContent = document.getElementById('summary-content');
     const questionsContent = document.getElementById('questions-content');
-    
-    // API status elements
-    const apiStatus = document.getElementById('api-status');
-    
-    // Check API configuration status
-    function checkApiStatus() {
-        // Determine which endpoint to use based on admin status
-        const isAdmin = document.body.classList.contains('admin');
-        const endpoint = isAdmin ? '/api/test-openai-connection' : '/api/check-api-config';
-        
-        // Show loading state
-        apiStatus.className = 'alert alert-info mb-4';
-        apiStatus.innerHTML = `
-            <div class="d-flex align-items-center mb-2">
-                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <strong>Checking API configuration...</strong>
-            </div>
-        `;
-        
-        // Fetch API status
-        fetch(endpoint)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // API is configured and working
-                    apiStatus.className = 'alert alert-success mb-4';
-                    apiStatus.innerHTML = `
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
-                            <div>
-                                <strong>API connection is working correctly</strong>
-                                <p class="mb-0 small">You can now analyze documents.</p>
-                            </div>
-                        </div>
-                    `;
-                    if (analyzeBtn) analyzeBtn.disabled = false;
-                } else {
-                    // API is not configured or not working
-                    apiStatus.className = 'alert alert-warning mb-4';
-                    apiStatus.innerHTML = `
-                        <div class="d-flex">
-                            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-                            <div>
-                                <strong>API configuration issue</strong>
-                                <p class="mb-0">${data.message || 'The OpenAI API is not configured correctly.'}</p>
-                                ${isAdmin ? 
-                                    '<p class="mb-1 mt-2">Please set up your OpenAI API key in the <a href="/admin/api-keys">API Keys</a> section to use this feature.</p>' : 
-                                    '<p class="mb-1 mt-2">Please contact an administrator to set up this feature.</p>'
-                                }
-                            </div>
-                        </div>
-                    `;
-                    if (analyzeBtn) analyzeBtn.disabled = true;
-                }
-            })
-            .catch(error => {
-                // Error checking API status
-                apiStatus.className = 'alert alert-danger mb-4';
-                apiStatus.innerHTML = `
-                    <div class="d-flex">
-                        <i class="bi bi-x-circle-fill me-2 fs-5"></i>
-                        <div>
-                            <strong>Error checking API status</strong>
-                            <p class="mb-0">${error.message || 'An error occurred while checking the API connection.'}</p>
-                        </div>
-                    </div>
-                `;
-                if (analyzeBtn) analyzeBtn.disabled = true;
-            });
-    }
-    
-    // Check API status when page loads
-    checkApiStatus();
-    
-    // API connection test elements
-    const testConnectionBtn = document.getElementById('test-connection-btn');
-    const connectionTestResults = document.getElementById('connection-test-results');
-    const connectionTestOutput = connectionTestResults ? connectionTestResults.querySelector('pre') : null;
-    
-    // Set up connection test if the button exists
-    if (testConnectionBtn && connectionTestResults && connectionTestOutput) {
-        testConnectionBtn.addEventListener('click', function() {
-            // Show loading state
-            testConnectionBtn.disabled = true;
-            testConnectionBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Testing...';
-            
-            // Make API request to test connection
-            fetch('/api/test-openai-connection')
-                .then(response => response.json())
-                .then(data => {
-                    // Format the JSON response for display
-                    connectionTestOutput.textContent = JSON.stringify(data, null, 2);
-                    
-                    // Show the results and color-code based on success/failure
-                    connectionTestResults.classList.remove('d-none');
-                    
-                    if (data.success) {
-                        connectionTestOutput.classList.add('text-success');
-                        connectionTestOutput.classList.remove('text-danger');
-                    } else {
-                        connectionTestOutput.classList.add('text-danger');
-                        connectionTestOutput.classList.remove('text-success');
-                    }
-                    
-                    // Update overall API status after the test
-                    checkApiStatus();
-                })
-                .catch(error => {
-                    // Show error
-                    connectionTestResults.classList.remove('d-none');
-                    connectionTestOutput.classList.add('text-danger');
-                    connectionTestOutput.classList.remove('text-success');
-                    connectionTestOutput.textContent = `Error running test: ${error.message}`;
-                })
-                .finally(() => {
-                    // Reset button state
-                    testConnectionBtn.disabled = false;
-                    testConnectionBtn.innerHTML = '<i class="bi bi-wrench me-1"></i> Test API Connection';
-                });
-        });
-    }
-    
-    // Document analysis form submission handler
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         if (!fileInput.files.length) {
             alert('Please select a file to analyze');
             return;
         }
-        
+
         // Show loading state
         loadingSpinner.classList.remove('d-none');
         analyzeBtn.disabled = true;
         resultsCard.classList.add('d-none');
-        
+
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
-        
+
         fetch('/api/analyze-document', {
             method: 'POST',
             body: formData
         })
-        .then(response => {
-            // First check if it's a valid JSON response
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return response.json().then(data => {
-                    if (!response.ok) {
-                        throw new Error(data.message || 'An error occurred while analyzing the document');
-                    }
-                    return data;
-                });
-            } else {
-                // Not a JSON response, likely an HTML error page
-                return response.text().then(text => {
-                    console.error('Received non-JSON response:', text.substring(0, 200) + '...');
-                    throw new Error('The server returned an invalid response. Please try again or contact an administrator.');
-                });
-            }
-        })
+        .then(response => response.json())
         .then(data => {
             // Hide loading state
             loadingSpinner.classList.add('d-none');
             analyzeBtn.disabled = false;
-            
+
             // Show results
             resultsCard.classList.remove('d-none');
-            
+
             // Display summary
             summaryContent.textContent = data.summary || 'No summary generated';
-            
+
             // Display questions
             questionsContent.innerHTML = '';
             if (data.questions && data.questions.length) {
                 const accordion = document.createElement('div');
                 accordion.className = 'accordion';
                 accordion.id = 'questionsAccordion';
-                
+
                 data.questions.forEach((qa, index) => {
                     const itemId = `question-${index}`;
                     const collapseId = `collapse-${index}`;
-                    
+
                     const accordionItem = document.createElement('div');
                     accordionItem.className = 'accordion-item';
-                    
+
                     accordionItem.innerHTML = `
                         <h2 class="accordion-header" id="${itemId}">
                             <button class="accordion-button ${index > 0 ? 'collapsed' : ''}" type="button" 
@@ -313,10 +148,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                     `;
-                    
+
                     accordion.appendChild(accordionItem);
                 });
-                
+
                 questionsContent.appendChild(accordion);
             } else {
                 questionsContent.innerHTML = '<p>No questions generated</p>';
@@ -326,21 +161,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide loading state
             loadingSpinner.classList.add('d-none');
             analyzeBtn.disabled = false;
-            
-            // Show error in a nicer way
+
+            // Show error
             resultsCard.classList.remove('d-none');
             summaryContent.innerHTML = `
                 <div class="alert alert-danger">
-                    <strong>Error:</strong> ${error.message || 'An error occurred while analyzing the document'}
-                </div>
-                <div class="mt-3">
-                    <p>Possible solutions:</p>
-                    <ul>
-                        <li>Make sure the OpenAI API key is configured correctly in the admin panel</li>
-                        <li>Check that the file format is supported (PDF, DOCX, or TXT)</li>
-                        <li>Try a different document if the problem persists</li>
-                        <li>Contact an administrator for assistance</li>
-                    </ul>
+                    <strong>Error:</strong> An error occurred while analyzing the document
                 </div>
             `;
             questionsContent.innerHTML = '';
