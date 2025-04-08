@@ -1251,17 +1251,7 @@ def document_analysis():
                           api_key_configured=api_key_configured)
 
 # Add a simple API endpoint to check if OpenAI API key is configured
-@app.route('/api/check-api-config', methods=['GET'])
-@login_required
-def check_api_config():
-    """Simple endpoint to check if OpenAI API key is configured"""
-    env_key = os.environ.get('OPENAI_API_KEY')
-    openai_key = ApiKey.query.filter_by(service_name='openai').first()
-    
-    return jsonify({
-        'success': bool(env_key or openai_key),
-        'message': 'API key is configured' if (env_key or openai_key) else 'OpenAI API key is not configured'
-    })
+
 
 # Add a diagnostic route for testing OpenAI API connectivity
 @app.route('/api/test-openai-connection', methods=['GET'])
