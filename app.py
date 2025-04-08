@@ -56,7 +56,7 @@ csrf.init_app(app)
 
 with app.app_context():
     # Import models after app is created to avoid circular imports
-    from models import User, Course, Lesson, Interest, UserInterest, CourseInterest, UserCourse, ApiKey
+    from models import User, Course, Lesson, Interest, UserInterest, CourseInterest, UserCourse
     
     # Create all database tables
     db.create_all()

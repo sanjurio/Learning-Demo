@@ -19,30 +19,6 @@ from datetime import datetime
 def initialize_db():
     # This will be called from route functions, not at import time
     setup_initial_data()
-    
-    # Store OpenAI API key from environment variable if available
-    openai_api_key = os.environ.get('OPENAI_API_KEY')
-    if openai_api_key:
-        # Check if key already exists
-        existing_key = ApiKey.query.filter_by(service_name='openai').first()
-        if not existing_key:
-            # Create new key entry
-            print(f"Storing OpenAI API key in database")
-            new_key = ApiKey(
-                service_name='openai',
-                key_value=openai_api_key,
-                created_by=1  # Admin user ID
-            )
-            db.session.add(new_key)
-            db.session.commit()
-            print(f"OpenAI API key stored in database")
-        elif existing_key.key_value != openai_api_key:
-            # Update existing key if different
-            print(f"Updating OpenAI API key in database")
-            existing_key.key_value = openai_api_key
-            existing_key.updated_at = datetime.utcnow()
-            db.session.commit()
-            print(f"OpenAI API key updated in database")
 
 @app.route('/')
 def index():
