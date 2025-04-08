@@ -21,6 +21,7 @@
                             <input type="file" class="form-control" id="documentFile" accept=".pdf,.docx,.txt">
                             <small class="text-muted">Supported formats: PDF, DOCX, TXT</small>
                         </div>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button class="btn btn-primary" onclick="uploadDocument()">Analyze Document</button>
                     </div>
                 </div>
@@ -75,8 +76,12 @@
             // Show loading state
             document.getElementById('analysisResults').style.display = 'none';
 
+            const csrfToken = document.querySelector('input[name="csrf_token"]').value;
             fetch('/api/analyze-document', {
                 method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
                 body: formData
             })
             .then(response => response.json())
