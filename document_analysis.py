@@ -88,9 +88,9 @@ def extract_text(file_stream, filename):
 def get_important_sentences(text, num_sentences=5):
     """Extract important sentences based on word frequency"""
     try:
-        # Use built-in punkt tokenizer that's already downloaded
-        sentences = sent_tokenize(text)
-        words = word_tokenize(text.lower())
+        # Explicitly use english pickle for punkt
+        sentences = sent_tokenize(text, language='english')
+        words = word_tokenize(text.lower(), language='english')
         stop_words = set(stopwords.words('english'))
         word_freq = FreqDist(word for word in words
                              if word.isalnum() and word not in stop_words)
@@ -98,7 +98,7 @@ def get_important_sentences(text, num_sentences=5):
         sentence_scores = {}
         for sentence in sentences:
             score = 0
-            words = word_tokenize(sentence.lower())
+            words = word_tokenize(sentence.lower(), language='english')
             for word in words:
                 if word in word_freq:
                     score += word_freq[word]
@@ -137,7 +137,7 @@ def generate_summary(text, max_length=500):
 def generate_questions(text):
     """Generate questions from the text"""
     try:
-        sentences = sent_tokenize(text)
+        sentences = sent_tokenize(text, language='english')
         questions = []
 
         for sentence in sentences:
