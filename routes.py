@@ -1254,8 +1254,7 @@ def document_analysis():
 
 
 # Add a diagnostic route for testing OpenAI API connectivity
-@app.route('/api/test-openai-connection', methods=['GET'])
-@login_required
+# Document analysis routes
 def test_openai_connection():
     """Diagnostic endpoint to test OpenAI API connectivity"""
     # Only admins can see full diagnostic information

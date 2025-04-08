@@ -41,24 +41,7 @@
                         {% endif %}
                     </div>
                     
-                    <div class="mb-4">
-                        <button id="test-connection-btn" class="btn btn-info">
-                            <i class="bi bi-wrench me-1"></i> Test API Connection
-                        </button>
-                        <div id="connection-test-results" class="mt-3 d-none">
-                            <h6 class="small fw-bold">API Connection Test Results:</h6>
-                            <pre class="bg-dark text-light p-3 rounded small" style="max-height: 200px; overflow-y: auto;"></pre>
-                        </div>
-                    </div>
-
-                    <form method="POST" action="{{ url_for('admin_api_keys') }}">
-                        {{ form.hidden_tag() }}
-                        <div class="mb-3">
-                            {{ form.openai_api_key.label(class="form-label") }}
-                            {{ form.openai_api_key(class="form-control", placeholder="sk-...") }}
-                            <div class="form-text">
-                                API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>
-                            </div>
+                    <!-- API key configuration removed -->
                             {% if form.openai_api_key.errors %}
                             <div class="invalid-feedback d-block">
                                 {% for error in form.openai_api_key.errors %}

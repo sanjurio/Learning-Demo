@@ -23,6 +23,10 @@ nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('averaged_perceptron_tagger')
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 def extract_text_from_pdf(file_stream):
     """Extract text from a PDF file"""
