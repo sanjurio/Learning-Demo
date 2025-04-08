@@ -8,7 +8,7 @@ from models import (User, Course, Lesson, Interest, UserInterest, CourseInterest
                  ForumTopic, ForumReply, UserLessonProgress, ApiKey)
 from forms import (LoginForm, RegistrationForm, TwoFactorForm, SetupTwoFactorForm, InterestSelectionForm, 
                   UserApprovalForm, CourseForm, LessonForm, InterestForm, UserInterestAccessForm, ProfileForm,
-                  ForumTopicForm, ForumReplyForm, ApiKeyForm)
+                  ForumTopicForm, ForumReplyForm)
 from utils import (generate_otp_secret, verify_totp, generate_qr_code, get_user_accessible_courses, 
                   get_pending_users, approve_user, reject_user, grant_interest_access, revoke_interest_access, 
                   get_user_interests_status, user_can_access_course, setup_initial_data, get_recommended_courses)
@@ -1168,61 +1168,7 @@ def internal_error(error):
     db.session.rollback()
     return render_template('errors/500.html', title='Server Error'), 500
 
-# API Key Management routes
-@app.route('/admin/api-keys', methods=['GET', 'POST'])
-@login_required
-def admin_api_keys():
-    """Admin route to manage API keys"""
-    # Check if user is admin
-    if not current_user.is_admin:
-        flash('You do not have permission to access this page.', 'danger')
-        return redirect(url_for('index'))
-    
-    form = ApiKeyForm()
-    
-    # Get existing OpenAI API key if it exists
-    openai_key = ApiKey.query.filter_by(service_name='openai').first()
-    
-    if form.validate_on_submit():
-        # Save the API key
-        if openai_key:
-            # Update existing key
-            openai_key.key_value = form.openai_api_key.data
-            openai_key.updated_at = datetime.utcnow()
-            db.session.commit()
-            flash('API key updated successfully.', 'success')
-        else:
-            # Create new key
-            new_key = ApiKey(
-                service_name='openai',
-                key_value=form.openai_api_key.data,
-                created_by=current_user.id
-            )
-            db.session.add(new_key)
-            db.session.commit()
-            flash('API key saved successfully.', 'success')
-        
-        # Update environment variable for immediate use
-        os.environ['OPENAI_API_KEY'] = form.openai_api_key.data
-        
-        return redirect(url_for('admin_api_keys'))
-    
-    # Create masked key version for display (e.g., sk-ab**********cd)
-    masked_key = None
-    if openai_key and openai_key.key_value:
-        key_value = openai_key.key_value
-        if len(key_value) > 8:
-            masked_key = f"{key_value[:4]}{'*' * (len(key_value) - 8)}{key_value[-4:]}"
-    
-    # Pre-fill form if key exists
-    if openai_key and not form.is_submitted():
-        form.openai_api_key.data = openai_key.key_value
-    
-    return render_template('admin/api_keys.html', 
-                          title='Manage API Keys',
-                          form=form,
-                          has_key=bool(openai_key),
-                          masked_key=masked_key)
+
 
 # Document Analysis Chatbot routes
 @app.route('/document-analysis', methods=['GET'])
