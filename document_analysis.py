@@ -2,50 +2,18 @@ import os
 import re
 import io
 import nltk
-import openai
 from PyPDF2 import PdfReader
 from docx import Document
-from nltk.tokenize import sent_tokenize
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+from nltk.probability import FreqDist
+from nltk.tokenize.treebank import TreebankWordDetokenizer
 from werkzeug.utils import secure_filename
 
-# Don't initialize client at module level
-# Will create client on demand in functions that need it
-client = None
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
 
-def get_openai_client():
-    """Get OpenAI client with current API key"""
-    global client
-    import logging
-    logger = logging.getLogger('document_analysis')
-    
-    # Get API key from environment
-    api_key = os.environ.get("OPENAI_API_KEY")
-    
-    # If we have an API key, create or update the client
-    if api_key:
-        try:
-            # Clear existing client if it exists
-            if client:
-                logger.info("Resetting existing OpenAI client with new key")
-                client = None
-            
-            # Avoid issues with OpenAI constructor by directly using dict instead of kwargs
-            # This fixes compatibility issues with proxies argument in older/newer versions
-            import openai
-            openai.api_key = api_key
-            
-            # Use the top-level client from the module
-            logger.info(f"OpenAI client initialized with API key: {api_key[:4]}...{api_key[-4:]}")
-            
-            # Return the module as the client
-            return openai
-        except Exception as e:
-            logger.error(f"Error initializing OpenAI client: {e}")
-            logger.error(f"Exception type: {type(e).__name__}")
-            return None
-    else:
-        logger.error("No OpenAI API key found in environment variables")
-        return None
 
 def extract_text_from_pdf(file_stream):
     """Extract text from a PDF file"""
@@ -83,7 +51,7 @@ def extract_text_from_txt(file_stream):
 def extract_text(file_stream, filename):
     """Extract text from various file types"""
     file_ext = os.path.splitext(filename)[1].lower()
-    
+
     if file_ext == '.pdf':
         return extract_text_from_pdf(file_stream)
     elif file_ext == '.docx':
@@ -93,362 +61,98 @@ def extract_text(file_stream, filename):
     else:
         return "Unsupported file format. Please upload a PDF, DOCX, or TXT file."
 
-def summarize_text(text, max_length=500):
-    """Summarize text using basic NLP techniques as fallback"""
+def get_important_sentences(text, num_sentences=5):
+    """Extract important sentences based on word frequency"""
+    sentences = sent_tokenize(text)
+    words = word_tokenize(text.lower())
+    stop_words = set(stopwords.words('english'))
+    word_freq = FreqDist(word for word in words if word.isalnum() and word not in stop_words)
+
+    sentence_scores = {}
+    for sentence in sentences:
+        score = 0
+        words = word_tokenize(sentence.lower())
+        for word in words:
+            if word in word_freq:
+                score += word_freq[word]
+        sentence_scores[sentence] = score / len(words) if words else 0
+
+    important_sentences = sorted(sentence_scores.items(), key=lambda x: x[1], reverse=True)[:num_sentences]
+    return [sentence for sentence, score in important_sentences]
+
+def generate_summary(text, max_length=500):
+    """Generate a summary of the text"""
     if not text:
         return "No text content found in the document."
-    
-    # Basic summarization using sentence scoring
-    sentences = sent_tokenize(text)
-    
-    if len(sentences) <= 3:
-        return text
-    
-    # Simple frequency-based summarization
-    word_frequencies = {}
-    for sentence in sentences:
-        for word in nltk.word_tokenize(sentence.lower()):
-            if word not in nltk.corpus.stopwords.words('english'):
-                if word not in word_frequencies:
-                    word_frequencies[word] = 1
-                else:
-                    word_frequencies[word] += 1
-    
-    # Normalize frequencies
-    if word_frequencies:
-        max_frequency = max(word_frequencies.values())
-        for word in word_frequencies:
-            word_frequencies[word] = word_frequencies[word] / max_frequency
-    
-    # Score sentences
-    sentence_scores = {}
-    for i, sentence in enumerate(sentences):
-        for word in nltk.word_tokenize(sentence.lower()):
-            if word in word_frequencies:
-                if i not in sentence_scores:
-                    sentence_scores[i] = word_frequencies[word]
-                else:
-                    sentence_scores[i] += word_frequencies[word]
-    
-    # Get top 3 sentences
-    if not sentence_scores:
-        return ' '.join(sentences[:3])
-    
-    # Sort by score
-    summary_sentences_indices = []
-    for idx, score in sorted(sentence_scores.items(), key=lambda x: x[1], reverse=True)[:3]:
-        summary_sentences_indices.append(idx)
-    
-    # Sort by position in text to maintain flow
-    summary_sentences_indices.sort()
-    
-    summary = ' '.join([sentences[i] for i in summary_sentences_indices])
+
+    important_sentences = get_important_sentences(text)
+    summary = ' '.join(important_sentences)
+
+    if len(summary) > max_length:
+        summary = summary[:max_length].rsplit(' ', 1)[0] + '...'
+
     return summary
 
-def analyze_with_ai(text, prompt_type="summary"):
-    """Analyze text using OpenAI API"""
-    import logging
-    logger = logging.getLogger('document_analysis')
-    
-    # Get a client with the current API key
-    openai_module = get_openai_client()
-    
-    if not openai_module:
-        logger.error("Cannot analyze with AI: No OpenAI API key available")
-        return None
-    
-    try:
-        # Truncate text if it's too long
-        max_tokens = 4000  # Adjust as needed
-        text = text[:max_tokens * 4]  # Rough estimate for token/char ratio
-        
-        prompt = ""
-        if prompt_type == "summary":
-            prompt = f"Please provide a concise summary of the following document in about 200 words:\n\n{text}"
-        elif prompt_type == "questions":
-            prompt = f"Based on the following document, generate 3 important questions someone might ask about this content, along with their answers:\n\n{text}"
-        
-        logger.info(f"Sending request to OpenAI API for {prompt_type}")
-        
-        # Use the older OpenAI API format which should be compatible with most versions
-        try:
-            # Set up system message and user message
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant that analyzes documents and extracts key information."},
-                {"role": "user", "content": prompt}
-            ]
-            
-            # Create a Completion request
-            response = openai_module.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=messages,
-                max_tokens=500,
-                temperature=0.5
-            )
-            
-            logger.info(f"Response received successfully")
-            # Get the content from the first choice's message content
-            result = response.choices[0].message.content
-            return result
-        except Exception as api_error:
-            logger.error(f"Error with OpenAI API: {api_error}")
-            # Try fallback to gpt-3.5-turbo-instruct model or just text completion
-            try:
-                logger.info("Falling back to text completion API")
-                # Use the completions API as fallback
-                response = openai_module.Completion.create(
-                    model="text-davinci-003", # Fallback to a model that should exist in most OpenAI versions
-                    prompt=prompt,
-                    max_tokens=500,
-                    temperature=0.5
-                )
-                logger.info(f"Fallback response received successfully")
-                result = response.choices[0].text
-                return result
-            except Exception as fallback_error:
-                logger.error(f"Fallback error: {fallback_error}")
-                return "Unable to generate AI analysis at this time. Please try again later."
-    except Exception as e:
-        import traceback
-        logger.error(f"Error with OpenAI API: {e}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return None
-
-def generate_basic_questions(text):
-    """Generate basic questions from text without AI"""
+def generate_questions(text):
+    """Generate questions from the text"""
     sentences = sent_tokenize(text)
     questions = []
-    
-    if len(sentences) < 3:
-        return ["Not enough content to generate meaningful questions."]
-    
-    # Select a few sentences to convert to questions
-    for i, sentence in enumerate(sentences[:10]):
-        if len(sentence.split()) > 5 and i % 3 == 0:  # Every 3rd sentence
-            # Simple transformation to question
-            words = sentence.split()
-            if len(words) > 3:
-                question = f"What does the document say about {' '.join(words[1:3])}?"
-                questions.append({"question": question, "context": sentence})
-            
-            if len(questions) >= 3:
-                break
-    
-    return questions if questions else ["Unable to generate questions from this document."]
+
+    for sentence in sentences:
+        words = word_tokenize(sentence)
+        pos_tags = nltk.pos_tag(words)
+
+        # Look for sentences with named entities or important information
+        if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
+            # Remove punctuation from the end of the sentence
+            sentence = re.sub(r'[.!?]$', '', sentence)
+
+            # Create different types of questions
+            if any(word.lower() in ['is', 'are', 'was', 'were'] for word in words):
+                question = f"What {words[0].lower()} {' '.join(words[1:])}?"
+            else:
+                question = f"What can you tell me about {sentence}?"
+
+            questions.append({
+                "question": question,
+                "answer": sentence
+            })
+
+        if len(questions) >= 3:
+            break
+
+    return questions if questions else [{
+        "question": "What is the main topic of this document?",
+        "answer": generate_summary(text, 200)
+    }]
 
 def analyze_document(file_stream, filename):
-    """Main function to analyze a document and return summary and questions"""
-    import logging
-    logger = logging.getLogger('document_analysis')
-    logger.info(f"Starting document analysis for file: {filename}")
-    
+    """Main function to analyze a document"""
     try:
-        secured_filename = secure_filename(filename)
-        logger.info(f"Secured filename: {secured_filename}")
-        
-        # Step 1: Extract text from the document
-        logger.info("Extracting text from document")
-        text = extract_text(file_stream, secured_filename)
-        
-        # Handle extraction failures
-        if not text:
-            logger.warning("No text extracted from document")
-            return {"success": False, "message": "Failed to extract text from the document. The file may be empty or corrupted."}
-        
-        if text.startswith("Unsupported"):
-            logger.warning(f"Unsupported file format: {secured_filename}")
-            return {"success": False, "message": text}
-        
-        if text.startswith("Error"):
-            logger.warning(f"Error extracting text: {text}")
-            return {"success": False, "message": text}
-        
-        # Step 2: Check for API key and connectivity before attempting AI analysis
-        logger.info("Checking OpenAI client availability")
-        client = get_openai_client()
-        has_ai = bool(client)
-        
-        # Log text length for debugging
-        text_length = len(text)
-        logger.info(f"Extracted {text_length} characters of text")
-        if text_length > 500:
-            sample_text = text[:500] + "..."
-        else:
-            sample_text = text
-        logger.debug(f"Sample text: {sample_text}")
-        
-        # Step 3: Generate analysis
-        ai_summary = None
-        ai_questions = None
-        
-        if has_ai:
-            logger.info("Attempting AI-based summary generation")
-            ai_summary = analyze_with_ai(text, "summary")
-            if ai_summary:
-                logger.info(f"AI summary generated successfully ({len(ai_summary)} chars)")
-            else:
-                logger.warning("Failed to generate AI summary")
-            
-            logger.info("Attempting AI-based question generation")
-            ai_questions = analyze_with_ai(text, "questions")
-            if ai_questions:
-                logger.info(f"AI questions generated successfully ({len(ai_questions)} chars)")
-            else:
-                logger.warning("Failed to generate AI questions")
-        else:
-            logger.warning("No OpenAI client available, skipping AI analysis")
-        
-        # Step 4: Fallback to basic methods if AI fails
-        if ai_summary:
-            summary = ai_summary
-            logger.info("Using AI-generated summary")
-        else:
-            logger.info("Falling back to basic summarization")
-            summary = summarize_text(text)
-            logger.info(f"Basic summary generated ({len(summary)} chars)")
-        
-        # Step 5: Process questions
-        if ai_questions:
-            logger.info("Processing AI-generated questions")
-            # Format AI-generated questions into the expected format
-            # AI typically returns a string with numbered questions and answers
-            formatted_questions = []
-            
-            try:
-                # Try to parse the AI response into structured Q&A format
-                lines = ai_questions.strip().split('\n')
-                current_q = None
-                current_a = []
-                
-                logger.debug(f"Parsing {len(lines)} lines of AI question response")
-                
-                for line in lines:
-                    line = line.strip()
-                    # Look for lines that start with Q, Question, 1., etc.
-                    if re.match(r'^(Q|Question|[0-9]+\.|\*|\-)\s+', line, re.IGNORECASE):
-                        # If we already have a question, save it and its answer
-                        if current_q:
-                            formatted_questions.append({
-                                "question": current_q,
-                                "answer": ' '.join(current_a)
-                            })
-                            logger.debug(f"Parsed question: {current_q[:30]}...")
-                        # Start a new question
-                        current_q = re.sub(r'^(Q|Question|[0-9]+\.|\*|\-)\s+', '', line, flags=re.IGNORECASE)
-                        current_a = []
-                    # Look for lines that start with A, Answer, etc.
-                    elif re.match(r'^(A|Answer|R|Response):\s+', line, re.IGNORECASE):
-                        # This is an answer line
-                        answer_text = re.sub(r'^(A|Answer|R|Response):\s+', '', line, flags=re.IGNORECASE)
-                        current_a.append(answer_text)
-                    elif current_q and not current_a and ':' in line:
-                        # This might be a Q: followed by A: on the same line
-                        parts = line.split(':', 1)
-                        if len(parts) == 2 and parts[0].strip() in ['Q', 'Question']:
-                            current_q = parts[1].strip()
-                    elif current_q:
-                        # This is continuation of an answer
-                        current_a.append(line)
-                
-                # Add the last question/answer pair
-                if current_q:
-                    formatted_questions.append({
-                        "question": current_q,
-                        "answer": ' '.join(current_a)
-                    })
-                    logger.debug(f"Parsed final question: {current_q[:30]}...")
-                
-                # If we couldn't parse any questions, try a different approach
-                if not formatted_questions:
-                    logger.info("First parsing approach failed, trying alternative approaches")
-                    
-                    # Split on numbered questions like "1. Question"
-                    sections = re.split(r'\n\s*[0-9]+\.\s+', '\n' + ai_questions)
-                    if len(sections) > 1:  # First section is empty due to the leading \n
-                        logger.debug(f"Found {len(sections)-1} numbered sections")
-                        for section in sections[1:]:  # Skip the first empty section
-                            parts = section.split('\n', 1)
-                            if len(parts) == 2:
-                                formatted_questions.append({
-                                    "question": parts[0].strip(),
-                                    "answer": parts[1].strip()
-                                })
-                                logger.debug(f"Parsed numbered question: {parts[0].strip()[:30]}...")
-                
-                # If we still couldn't parse any questions, fallback to simple splitting
-                if not formatted_questions and ai_questions:
-                    logger.info("Alternative parsing approach failed, falling back to basic split")
-                    # Just split the text into roughly equal parts for Q&A
-                    sentences = sent_tokenize(ai_questions)
-                    mid = len(sentences) // 2
-                    
-                    formatted_questions = [
-                        {
-                            "question": "What are the key points in this document?",
-                            "answer": ' '.join(sentences[:mid])
-                        },
-                        {
-                            "question": "What additional information does the document provide?",
-                            "answer": ' '.join(sentences[mid:])
-                        }
-                    ]
-                    logger.debug("Created basic split questions")
-                
-                logger.info(f"Successfully parsed {len(formatted_questions)} questions from AI response")
-                
-            except Exception as e:
-                import traceback
-                logger.error(f"Error parsing AI questions: {e}")
-                logger.error(f"Traceback: {traceback.format_exc()}")
-                # Fallback to the entire response as one Q&A
-                formatted_questions = [
-                    {
-                        "question": "What information is contained in this document?",
-                        "answer": ai_questions
-                    }
-                ]
-                logger.info("Using entire AI response as a single question/answer due to parsing error")
-            
-            result = {
-                "success": True,
-                "summary": summary,
-                "ai_analysis": True,
-                "questions": formatted_questions
+        # Extract text from the document
+        text = extract_text(file_stream, filename)
+
+        if not text or text.startswith("Unsupported") or text.startswith("Error"):
+            return {
+                "success": False,
+                "message": text or "Failed to extract text from the document"
             }
-        else:
-            # Basic question generation as fallback
-            logger.info("No AI questions available, using basic question generation")
-            basic_questions = generate_basic_questions(text)
-            
-            # Ensure proper formatting for API response
-            formatted_questions = []
-            for q in basic_questions:
-                if isinstance(q, dict) and "question" in q:
-                    formatted_questions.append(q)
-                else:
-                    formatted_questions.append({
-                        "question": "What is this document about?",
-                        "answer": q if isinstance(q, str) else str(q)
-                    })
-            
-            logger.info(f"Generated {len(formatted_questions)} basic questions")
-            
-            result = {
-                "success": True,
-                "summary": summary,
-                "ai_analysis": False,
-                "questions": formatted_questions
-            }
-        
-        logger.info("Document analysis completed successfully")
-        return result
-        
+
+        # Generate summary and questions
+        summary = generate_summary(text)
+        questions = generate_questions(text)
+
+        return {
+            "success": True,
+            "summary": summary,
+            "questions": questions,
+            "ai_analysis": False
+        }
+
     except Exception as e:
         import traceback
-        logger.error(f"Critical error in analyze_document: {e}")
-        logger.error(f"Traceback: {traceback.format_exc()}")
         return {
             "success": False,
-            "message": f"An unexpected error occurred during document analysis: {str(e)}",
+            "message": f"An error occurred during document analysis: {str(e)}",
             "error_details": traceback.format_exc()
         }
