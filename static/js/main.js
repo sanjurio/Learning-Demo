@@ -133,29 +133,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Assuming formData is defined elsewhere and contains the document data
-    // This is the added section to handle CSRF token
-    const analyzeButton = document.getElementById('analyze-button'); //Assumed button ID
-    if(analyzeButton){
-        analyzeButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            const formData = new FormData(document.getElementById('document-form')); //Assumed form ID
-            fetch('/api/analyze-document', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Handle the response from the server
-                console.log('Document analysis result:', data);
-            })
-            .catch(error => {
-                console.error('Error analyzing document:', error);
-            });
+    // Document analysis form handling
+const analyzeButton = document.getElementById('analyze-button');
+if(analyzeButton) {
+    analyzeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        const formData = new FormData(document.getElementById('document-form'));
+        fetch('/api/analyze-document', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Document analysis result:', data);
+        })
+        .catch(error => {
+            console.error('Error analyzing document:', error);
         });
-    }
+    });
+}
 
 });
