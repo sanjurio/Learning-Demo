@@ -9,10 +9,8 @@ from nltk.corpus import stopwords
 from nltk.probability import FreqDist
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 import nltk
+nltk.data.path.append('./nltk_data')
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('averaged_perceptron_tagger')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
