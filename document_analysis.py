@@ -137,8 +137,8 @@ def generate_summary(text, max_length=500):
 def generate_questions(text):
     """Generate better contextual questions from the text"""
     try:
-        # Use regular expressions for basic sentence splitting as fallback
-        sentences = re.split(r'[.!?]+\s+', text)
+        # Use NLTK's punkt tokenizer for sentence splitting
+        sentences = nltk.sent_tokenize(text)
         important_sentences = []
 
         # First pass: identify important sentences
