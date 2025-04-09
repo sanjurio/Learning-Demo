@@ -1,4 +1,3 @@
-
 import os
 import re
 import io
@@ -154,7 +153,10 @@ def generate_questions(text):
                     else:
                         question = f"What can you tell me about {sentence}?"
 
-                    questions.append({"question": question, "answer": sentence})
+                    questions.append({
+                        "question": question,
+                        "answer": sentence
+                    })
 
                 if len(questions) >= 3:
                     break

@@ -1,0 +1,84 @@
+def generate_summary(text, max_length=700):
+    """Generate a structured, readable summary"""
+    try:
+        if not text:
+            return "No text content found in the document."
+
+        lines = text.strip().splitlines()
+        summary_lines = []
+        current_section = ""
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.endswith(":") and len(line) < 60:
+                current_section = line.rstrip(":")
+                summary_lines.append(f"\n🔹 {current_section}")
+            elif current_section:
+                summary_lines.append(f"– {line}")
+            else:
+                summary_lines.append(line)
+
+        summary = "\n".join(summary_lines)
+        return summary[:max_length].rsplit(' ', 1)[0] + '...' if len(summary) > max_length else summary
+    except Exception as e:
+        logger.error(f"Error generating summary: {str(e)}")
+        return "Error generating summary."
+
+
+def generate_questions(text):
+    """Generate better contextual questions from the text"""
+    try:
+        sentences = sent_tokenize(text)
+        questions = []
+
+        for sentence in sentences:
+            sentence_clean = sentence.strip().rstrip(".")
+
+            if sentence_clean.lower().startswith("ai can"):
+                question = "How can AI help in various fields?"
+            elif sentence_clean.lower().startswith("ai tools"):
+                question = "What are some popular AI tools?"
+            elif "concerns" in sentence.lower() or "issues" in sentence.lower():
+                question = "What are the concerns associated with AI-generated content?"
+            elif sentence_clean.lower().startswith("examples"):
+                question = "Can you give examples of AI content?"
+            else:
+                continue
+
+            questions.append({"question": question, "answer": sentence_clean})
+            if len(questions) >= 5:
+                break
+
+        if not questions:
+            questions = [{
+                "question": "What is the main topic of this document?",
+                "answer": generate_summary(text, 200)
+            }]
+
+        return questions
+    except Exception as e:
+        logger.error(f"Error generating questions: {str(e)}")
+        return [{"question": "Error generating questions", "answer": str(e)}]
+
+
+def analyze_document(file_stream, filename):
+    """Main function to analyze a document"""
+    try:
+        logger.info(f"Starting analysis of document: {filename}")
+        text = extract_text(file_stream, filename)
+
+        if text is None or not text.strip():
+            return {"success": False, "message": "No text content found in the document"}
+
+        summary = generate_summary(text)
+        questions = generate_questions(text)
+
+        logger.info("Document analysis completed successfully")
+        return {"success": True, "summary": summary, "questions": questions}
+
+    except Exception as e:
+        logger.error(f"Error in document analysis: {str(e)}")
+        return {"success": False, "message": f"An error occurred: {str(e)}"}
