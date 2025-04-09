@@ -137,12 +137,15 @@ def generate_summary(text, max_length=500):
 def generate_questions(text):
     """Generate better contextual questions from the text"""
     try:
-        sentences = sent_tokenize(text)
+        # Use regular expressions for basic sentence splitting as fallback
+        sentences = re.split(r'[.!?]+\s+', text)
         important_sentences = []
 
         # First pass: identify important sentences
         for sentence in sentences:
-            words = word_tokenize(sentence)
+            if not sentence.strip():
+                continue
+            words = nltk.word_tokenize(sentence)
             pos_tags = nltk.pos_tag(words)
 
             # Check if sentence contains important elements
