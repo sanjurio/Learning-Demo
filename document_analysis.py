@@ -1,3 +1,4 @@
+
 import os
 import re
 import io
@@ -147,16 +148,20 @@ def generate_questions(text):
 
                 if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
                     sentence = re.sub(r'[.!?]$', '', sentence)
-                if any(word.lower() in ['is', 'are', 'was', 'were']
-                       for word in words):
-                    question = f"What {words[0].lower()} {' '.join(words[1:])}?"
-                else:
-                    question = f"What can you tell me about {sentence}?"
+                    if any(word.lower() in ['is', 'are', 'was', 'were']
+                           for word in words):
+                        question = f"What {words[0].lower()} {' '.join(words[1:])}?"
+                    else:
+                        question = f"What can you tell me about {sentence}?"
 
-                questions.append({"question": question, "answer": sentence})
+                    questions.append({"question": question, "answer": sentence})
 
-            if len(questions) >= 3:
-                break
+                if len(questions) >= 3:
+                    break
+
+            except Exception as e:
+                logger.error(f"Error processing sentence: {str(e)}")
+                continue
 
         if not questions:
             questions = [{
