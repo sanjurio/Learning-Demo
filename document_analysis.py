@@ -135,78 +135,43 @@ def generate_summary(text, max_length=500):
 
 
 def generate_questions(text):
-    """Generate better contextual questions from the text"""
+    """Generate questions from the text"""
     try:
-        # Use NLTK's punkt tokenizer for sentence splitting
-        sentences = nltk.sent_tokenize(text)
-        important_sentences = []
-
-        # First pass: identify important sentences
-        for sentence in sentences:
-            if not sentence.strip():
-                continue
-            words = nltk.word_tokenize(sentence)
-            pos_tags = nltk.pos_tag(words)
-
-            # Check if sentence contains important elements
-            if any(tag.startswith(('NN', 'VB', 'JJ')) for _, tag in pos_tags):
-                important_sentences.append(sentence)
-
+        sentences = text.split('. ')
         questions = []
-        for sentence in important_sentences[:5]:  # Limit to top 5 sentences
+
+        for sentence in sentences:
             try:
-                words = word_tokenize(sentence)
+                words = sentence.split()
                 pos_tags = nltk.pos_tag(words)
 
-                # Generate different types of questions based on sentence content
-                if any(word.lower() in ['defines', 'means', 'refers', 'is', 'are'] for word in words):
-                    # Definition question
-                    for i, (word, tag) in enumerate(pos_tags):
-                        if tag.startswith('NN') and i > 0:
-                            questions.append({
-                                "question": f"Can you explain what {word} is?",
-                                "answer": sentence
-                            })
-                            break
+                if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
+                    sentence = re.sub(r'[.!?]$', '', sentence)
+                    if any(word.lower() in ['is', 'are', 'was', 'were']
+                           for word in words):
+                        question = f"What {words[0].lower()} {' '.join(words[1:])}?"
+                    else:
+                        question = f"What can you tell me about {sentence}?"
 
-                elif any(tag in ['NNP', 'NNPS'] for _, tag in pos_tags):
-                    # Question about named entities
-                    entity = next(word for word, tag in pos_tags if tag in ['NNP', 'NNPS'])
                     questions.append({
-                        "question": f"What role does {entity} play in this context?",
+                        "question": question,
                         "answer": sentence
                     })
 
-                elif any(word.lower() in ['can', 'could', 'will', 'would'] for word in words):
-                    # Capability question
-                    questions.append({
-                        "question": f"What capabilities or possibilities are mentioned in: {sentence}?",
-                        "answer": sentence
-                    })
-
-                else:
-                    # Extract key concepts
-                    key_terms = [word for word, tag in pos_tags if tag.startswith('NN') and len(word) > 3]
-                    if key_terms:
-                        questions.append({
-                            "question": f"What are the key points about {key_terms[0]}?",
-                            "answer": sentence
-                        })
+                if len(questions) >= 3:
+                    break
 
             except Exception as e:
                 logger.error(f"Error processing sentence: {str(e)}")
                 continue
 
-            if len(questions) >= 5:
-                break
+        if not questions:
+            questions = [{
+                "question": "What is the main topic of this document?",
+                "answer": generate_summary(text, 2000)
+            }]
 
-        # Always include a main topic question
-        questions.insert(0, {
-            "question": "What is the main topic of this document?",
-            "answer": generate_summary(text, 300)
-        })
-
-        return questions[:6]  # Return at most 6 questions
+        return questions
     except Exception as e:
         logger.error(f"Error generating questions: {str(e)}")
         return [{"question": "Error generating questions", "answer": str(e)}]
