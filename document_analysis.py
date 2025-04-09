@@ -135,43 +135,75 @@ def generate_summary(text, max_length=500):
 
 
 def generate_questions(text):
-    """Generate questions from the text"""
+    """Generate better contextual questions from the text"""
     try:
-        sentences = text.split('. ')
-        questions = []
+        sentences = sent_tokenize(text)
+        important_sentences = []
 
+        # First pass: identify important sentences
         for sentence in sentences:
+            words = word_tokenize(sentence)
+            pos_tags = nltk.pos_tag(words)
+
+            # Check if sentence contains important elements
+            if any(tag.startswith(('NN', 'VB', 'JJ')) for _, tag in pos_tags):
+                important_sentences.append(sentence)
+
+        questions = []
+        for sentence in important_sentences[:5]:  # Limit to top 5 sentences
             try:
-                words = sentence.split()
+                words = word_tokenize(sentence)
                 pos_tags = nltk.pos_tag(words)
 
-                if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
-                    sentence = re.sub(r'[.!?]$', '', sentence)
-                    if any(word.lower() in ['is', 'are', 'was', 'were']
-                           for word in words):
-                        question = f"What {words[0].lower()} {' '.join(words[1:])}?"
-                    else:
-                        question = f"What can you tell me about {sentence}?"
+                # Generate different types of questions based on sentence content
+                if any(word.lower() in ['defines', 'means', 'refers', 'is', 'are'] for word in words):
+                    # Definition question
+                    for i, (word, tag) in enumerate(pos_tags):
+                        if tag.startswith('NN') and i > 0:
+                            questions.append({
+                                "question": f"Can you explain what {word} is?",
+                                "answer": sentence
+                            })
+                            break
 
+                elif any(tag in ['NNP', 'NNPS'] for _, tag in pos_tags):
+                    # Question about named entities
+                    entity = next(word for word, tag in pos_tags if tag in ['NNP', 'NNPS'])
                     questions.append({
-                        "question": question,
+                        "question": f"What role does {entity} play in this context?",
                         "answer": sentence
                     })
 
-                if len(questions) >= 3:
-                    break
+                elif any(word.lower() in ['can', 'could', 'will', 'would'] for word in words):
+                    # Capability question
+                    questions.append({
+                        "question": f"What capabilities or possibilities are mentioned in: {sentence}?",
+                        "answer": sentence
+                    })
+
+                else:
+                    # Extract key concepts
+                    key_terms = [word for word, tag in pos_tags if tag.startswith('NN') and len(word) > 3]
+                    if key_terms:
+                        questions.append({
+                            "question": f"What are the key points about {key_terms[0]}?",
+                            "answer": sentence
+                        })
 
             except Exception as e:
                 logger.error(f"Error processing sentence: {str(e)}")
                 continue
 
-        if not questions:
-            questions = [{
-                "question": "What is the main topic of this document?",
-                "answer": generate_summary(text, 200)
-            }]
+            if len(questions) >= 5:
+                break
 
-        return questions
+        # Always include a main topic question
+        questions.insert(0, {
+            "question": "What is the main topic of this document?",
+            "answer": generate_summary(text, 300)
+        })
+
+        return questions[:6]  # Return at most 6 questions
     except Exception as e:
         logger.error(f"Error generating questions: {str(e)}")
         return [{"question": "Error generating questions", "answer": str(e)}]
