@@ -146,7 +146,7 @@ def generate_questions(text):
                 pos_tags = nltk.pos_tag(words)
 
                 if any(tag in ['NNP', 'NNPS', 'CD'] for word, tag in pos_tags):
-                sentence = re.sub(r'[.!?]$', '', sentence)
+                    sentence = re.sub(r'[.!?]$', '', sentence)
                 if any(word.lower() in ['is', 'are', 'was', 'were']
                        for word in words):
                     question = f"What {words[0].lower()} {' '.join(words[1:])}?"
