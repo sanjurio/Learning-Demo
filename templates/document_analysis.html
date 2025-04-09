@@ -1,82 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Document Analysis</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% extends "base.html" %}
+    {% block head %}
+    <title>Document Analysis - {{ title }}</title>
+    {% endblock %}
 </head>
 <body>
+    {% block content %}
     <div class="container mt-5">
         <h1>Document Analysis</h1>
-        <div class="card mb-4">
-            <div class="card-body">
-                <form id="document-form" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label for="file" class="form-label">Upload Document (PDF, DOCX, or TXT)</label>
-                        <input type="file" class="form-control" id="file" name="file" accept=".pdf,.docx,.txt" required>
+        <p>Upload a document (PDF, DOCX, or TXT) to analyze its content and generate a summary.</p>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload Document</h5>
+                        <div class="mb-3">
+                            <input type="file" class="form-control" id="documentFile" accept=".pdf,.docx,.txt">
+                            <small class="text-muted">Supported formats: PDF, DOCX, TXT</small>
+                        </div>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-primary" onclick="uploadDocument()">Analyze Document</button>
                     </div>
-                    <button type="submit" class="btn btn-primary">Analyze Document</button>
-                </form>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">How It Works</h5>
+                        <p>This tool analyzes documents and extracts key information. Simply upload a document and the system will:</p>
+                        <ol>
+                            <li>Extract the text content from your document</li>
+                            <li>Generate a concise summary of the main points</li>
+                            <li>Create a list of questions and answers based on the content</li>
+                        </ol>
+                        <p>This can be useful for quickly understanding long documents or creating study materials.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div id="results" style="display: none;">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3>Summary</h3>
-                </div>
-                <div class="card-body">
-                    <div id="summary-content"></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3>Questions & Answers</h3>
-                </div>
-                <div class="card-body">
-                    <div id="qa-content"></div>
+        <div class="row mt-4">
+            <div class="col-12">
+                <div id="analysisResults" style="display: none;">
+                    <h3>Analysis Results</h3>
+                    <div id="summary" class="mb-4">
+                        <h4>Summary</h4>
+                        <div id="summaryContent" class="alert alert-info"></div>
+                    </div>
+                    <div id="questionsSection">
+                        <h4>Questions & Answers</h4>
+                        <div id="questionsList"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('document-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
+        function uploadDocument() {
+            const fileInput = document.getElementById('documentFile');
+            const file = fileInput.files[0];
 
-            try {
-                const response = await fetch('/api/analyze-document', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Display results
-                    document.getElementById('results').style.display = 'block';
-                    document.getElementById('summary-content').textContent = data.summary;
-
-                    // Display Q&A
-                    const qaContent = document.getElementById('qa-content');
-                    qaContent.innerHTML = '';
-                    data.questions.forEach(qa => {
-                        qaContent.innerHTML += `
-                            <div class="mb-4">
-                                <h4 class="text-primary">${qa.question}</h4>
-                                <p>${qa.answer}</p>
-                            </div>
-                        `;
-                    });
-                } else {
-                    alert(data.message || 'Error analyzing document');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error analyzing document');
+            if (!file) {
+                alert('Please select a file first.');
+                return;
             }
-        });
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Show loading state
+            document.getElementById('analysisResults').style.display = 'none';
+
+            const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+            fetch('/api/analyze-document', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayResults(data);
+                } else {
+                    throw new Error(data.message || 'An error occurred while analyzing the document');
+                }
+            })
+            .catch(error => {
+                alert(error.message);
+            });
+        }
+
+        function displayResults(data) {
+            document.getElementById('analysisResults').style.display = 'block';
+            document.getElementById('summaryContent').textContent = data.summary;
+
+            const questionsList = document.getElementById('questionsList');
+            questionsList.innerHTML = '';
+
+            data.questions.forEach(qa => {
+                const qaDiv = document.createElement('div');
+                qaDiv.className = 'card mb-3';
+                qaDiv.innerHTML = `
+                    <div class="card-body">
+                        <h5 class="card-title">${qa.question}</h5>
+                        <p class="card-text">${qa.answer}</p>
+                    </div>
+                `;
+                questionsList.appendChild(qaDiv);
+            });
+        }
     </script>
+    {% endblock %}
 </body>
 </html>
