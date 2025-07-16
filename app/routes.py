@@ -21,7 +21,7 @@ from datetime import datetime
 
 def register_routes(app):
     """Register all routes with the Flask app"""
-    
+
     @app.route('/')
     def index():
         if current_user.is_authenticated:
@@ -161,13 +161,27 @@ def register_routes(app):
             flash('Your account is pending approval.', 'warning')
             return redirect(url_for('logout'))
 
-        courses = get_user_accessible_courses(current_user)
-        recommended = get_recommended_courses(current_user)
+        if current_user.is_admin:
+            return redirect(url_for('admin_dashboard'))
+
+        # Get user's interests and available courses
+        user_interests = get_user_interests_status(current_user.id)
+
+        # Get courses based on user's approved interests
+        approved_interest_ids = [ui['interest'].id for ui in user_interests if ui['access_granted']]
+
+        available_courses = []
+        if approved_interest_ids:
+            available_courses = db.session.query(Course)\
+                .join(CourseInterest, Course.id == CourseInterest.course_id)\
+                .filter(CourseInterest.interest_id.in_(approved_interest_ids))\
+                .distinct()\
+                .all()
 
         return render_template('user/dashboard.html',
                                title='Dashboard',
-                               courses=courses,
-                               recommended=recommended)
+                               courses=available_courses,
+                               user_interests=user_interests)
 
     @app.route('/logout')
     @login_required
@@ -212,11 +226,11 @@ def register_routes(app):
             user.set_access_based_on_domain()
             db.session.add(user)
             db.session.commit()
-            
+
             # Set up 2FA
             user.otp_secret = generate_otp_secret()
             db.session.commit()
-            
+
             flash('Registration successful! Your account is pending admin approval.', 'success')
             return redirect(url_for('login', registration_complete=1))
 
@@ -249,7 +263,7 @@ def register_routes(app):
                 session.pop('user_id', None)
                 session.pop('remember_me', None)
                 flash('Login successful!', 'success')
-                
+
                 next_page = request.args.get('next')
                 if not next_page or urlparse(next_page).netloc != '':
                     next_page = url_for('index')
@@ -266,17 +280,17 @@ def register_routes(app):
             # Handle file upload
             if 'file' not in request.files:
                 return jsonify({'error': 'No file uploaded'})
-            
+
             file = request.files['file']
             if file.filename == '':
                 return jsonify({'error': 'No file selected'})
-            
+
             try:
                 result = analyze_document(file, file.filename)
                 return jsonify(result)
             except Exception as e:
                 return jsonify({'error': str(e)})
-        
+
         return render_template('document_analysis.html', title='Document Analysis')
 
     @app.route('/profile', methods=['GET', 'POST'])
@@ -286,7 +300,7 @@ def register_routes(app):
         if form.validate_on_submit():
             current_user.username = form.username.data
             current_user.email = form.email.data
-            
+
             if form.new_password.data:
                 if form.current_password.data and current_user.check_password(form.current_password.data):
                     current_user.set_password(form.new_password.data)
@@ -294,15 +308,15 @@ def register_routes(app):
                 else:
                     flash('Current password is incorrect.', 'danger')
                     return render_template('user/profile.html', title='Profile', form=form)
-            
+
             db.session.commit()
             flash('Profile updated successfully!', 'success')
             return redirect(url_for('profile'))
-        
+
         # Pre-populate form with current user data
         form.username.data = current_user.username
         form.email.data = current_user.email
-        
+
         return render_template('user/profile.html', title='Profile', form=form)
 
     @app.route('/user/interests', methods=['GET', 'POST'])
@@ -315,29 +329,32 @@ def register_routes(app):
         form = InterestSelectionForm()
         all_interests = Interest.query.all()
         form.interests.choices = [(i.id, i.name) for i in all_interests]
-        
+
         if form.validate_on_submit():
-            # Clear existing selections
+            # Handle form submission - create pending interest requests
+            selected_interest_ids = form.interests.data
+
+            # Remove any existing interest requests for this user
             UserInterest.query.filter_by(user_id=current_user.id).delete()
-            
-            # Add new selections
-            for interest_id in form.interests.data:
+
+            # Create new interest requests
+            for interest_id in selected_interest_ids:
                 user_interest = UserInterest(
                     user_id=current_user.id,
                     interest_id=interest_id,
                     access_granted=False
                 )
                 db.session.add(user_interest)
-            
+
             db.session.commit()
             flash('Your interest selections have been updated and are pending admin approval.', 'success')
             return redirect(url_for('user_interests'))
-        
+
         # Pre-populate form with current selections
         user_interests_status = get_user_interests_status(current_user.id)
         current_selections = [ui['interest'].id for ui in user_interests_status if ui.get('selected', False)]
         form.interests.data = current_selections
-        
+
         return render_template('user/interests.html',
                                title='My Interests',
                                form=form,
@@ -348,13 +365,13 @@ def register_routes(app):
     @login_required
     def view_course(course_id):
         course = Course.query.get_or_404(course_id)
-        
+
         if not user_can_access_course(current_user, course):
             flash('You do not have access to this course.', 'danger')
             return redirect(url_for('user_dashboard'))
-        
+
         lessons = Lesson.query.filter_by(course_id=course.id).order_by(Lesson.order).all()
-        
+
         return render_template('user/course.html',
                                title=course.title,
                                course=course,
@@ -364,11 +381,11 @@ def register_routes(app):
     @login_required
     def view_lesson(lesson_id):
         lesson = Lesson.query.get_or_404(lesson_id)
-        
+
         if not user_can_access_course(current_user, lesson.course):
             flash('You do not have access to this lesson.', 'danger')
             return redirect(url_for('user_dashboard'))
-        
+
         return render_template('user/lesson.html',
                                title=lesson.title,
                                lesson=lesson)
@@ -456,7 +473,7 @@ def register_routes(app):
             try:
                 user_id = int(user_id)
                 interest_id = int(interest_id)
-                
+
                 if action == 'grant':
                     if grant_interest_access(user_id, interest_id):
                         flash('Interest access granted successfully.', 'success')
@@ -546,7 +563,7 @@ def register_routes(app):
         form.title.data = course.title
         form.description.data = course.description
         form.cover_image_url.data = course.cover_image_url
-        
+
         # Set selected interests
         current_interests = [ci.interest_id for ci in CourseInterest.query.filter_by(course_id=course.id).all()]
         form.interests.data = current_interests
@@ -574,7 +591,7 @@ def register_routes(app):
 
         course = Course.query.get_or_404(course_id)
         lessons = Lesson.query.filter_by(course_id=course_id).order_by(Lesson.order).all()
-        
+
         return render_template('admin/lessons.html',
                                title=f'Manage Lessons for {course.title}',
                                course=course,
@@ -663,7 +680,7 @@ def register_routes(app):
             db.session.add(topic)
             db.session.commit()
             flash('Topic created successfully!', 'success')
-            
+
             if topic.course_id:
                 return redirect(url_for('course_forum', course_id=topic.course_id))
             else:
@@ -706,13 +723,13 @@ def register_routes(app):
     @login_required
     def course_forum(course_id):
         course = Course.query.get_or_404(course_id)
-        
+
         if not user_can_access_course(current_user, course):
             flash('You do not have access to this course forum.', 'danger')
             return redirect(url_for('user_dashboard'))
 
         topics = ForumTopic.query.filter_by(course_id=course_id).order_by(ForumTopic.created_at.desc()).all()
-        
+
         return render_template('forum/course_forum.html',
                                title=f'{course.title} Forum',
                                course=course,
@@ -759,12 +776,12 @@ def register_routes(app):
             try:
                 user_id = int(user_id)
                 interest_id = int(interest_id)
-                
+
                 user_interest = UserInterest.query.filter_by(
                     user_id=user_id,
                     interest_id=interest_id
                 ).first()
-                
+
                 if action == 'approve':
                     if user_interest:
                         user_interest.access_granted = True

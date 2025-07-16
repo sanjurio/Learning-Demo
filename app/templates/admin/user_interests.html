@@ -124,3 +124,121 @@
     </div>
 </div>
 {% endblock %}
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3>User Interest Approvals</h3>
+                    <p class="text-muted">Manage user access to different interest areas and courses</p>
+                </div>
+                <div class="card-body">
+                    {% if pending_requests %}
+                    <h4>Pending Approval Requests</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Interest</th>
+                                    <th>Request Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for request in pending_requests %}
+                                <tr>
+                                    <td>{{ request.user.username }}</td>
+                                    <td>{{ request.user.email }}</td>
+                                    <td>{{ request.interest.name }}</td>
+                                    <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') if request.created_at else 'N/A' }}</td>
+                                    <td>
+                                        <form method="POST" style="display: inline;">
+                                            {{ csrf_token() }}
+                                            <input type="hidden" name="action" value="approve">
+                                            <input type="hidden" name="user_id" value="{{ request.user.id }}">
+                                            <input type="hidden" name="interest_id" value="{{ request.interest.id }}">
+                                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                        </form>
+                                        <form method="POST" style="display: inline;">
+                                            {{ csrf_token() }}
+                                            <input type="hidden" name="action" value="deny">
+                                            <input type="hidden" name="user_id" value="{{ request.user.id }}">
+                                            <input type="hidden" name="interest_id" value="{{ request.interest.id }}">
+                                            <button type="submit" class="btn btn-danger btn-sm">Deny</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No pending interest approval requests.
+                    </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <h4>All User Interest Access</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Interest</th>
+                                    <th>Status</th>
+                                    <th>Granted Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for access in all_access %}
+                                <tr>
+                                    <td>{{ access.user.username }}</td>
+                                    <td>{{ access.user.email }}</td>
+                                    <td>{{ access.interest.name }}</td>
+                                    <td>
+                                        {% if access.access_granted %}
+                                            <span class="badge badge-success">Approved</span>
+                                        {% else %}
+                                            <span class="badge badge-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ access.granted_at.strftime('%Y-%m-%d %H:%M') if access.granted_at else 'N/A' }}</td>
+                                    <td>
+                                        {% if access.access_granted %}
+                                        <form method="POST" style="display: inline;">
+                                            {{ csrf_token() }}
+                                            <input type="hidden" name="action" value="revoke">
+                                            <input type="hidden" name="user_id" value="{{ access.user.id }}">
+                                            <input type="hidden" name="interest_id" value="{{ access.interest.id }}">
+                                            <button type="submit" class="btn btn-warning btn-sm">Revoke</button>
+                                        </form>
+                                        {% else %}
+                                        <form method="POST" style="display: inline;">
+                                            {{ csrf_token() }}
+                                            <input type="hidden" name="action" value="approve">
+                                            <input type="hidden" name="user_id" value="{{ access.user.id }}">
+                                            <input type="hidden" name="interest_id" value="{{ access.interest.id }}">
+                                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
