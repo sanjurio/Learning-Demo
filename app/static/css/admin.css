@@ -453,6 +453,16 @@ input:checked + .slider:before {
     color: #333 !important;
 }
 
+/* Fix table text visibility */
+.user-table tbody tr td {
+    color: #333 !important;
+    background-color: #f8f9fa !important;
+}
+
+.user-table tbody tr:nth-child(even) td {
+    background-color: #e9ecef !important;
+}
+
 /* Responsive bulk actions */
 @media (max-width: 768px) {
     .bulk-actions {

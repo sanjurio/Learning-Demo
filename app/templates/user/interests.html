@@ -3,13 +3,13 @@
 {% block content %}
 <div class="section">
     <h1 class="section-title">My Interests</h1>
-    
+
     <div class="card mb-4">
         <div class="card-body">
             <p>Select your interests in artificial intelligence to access relevant courses. Your selections will be reviewed by administrators who will grant you access.</p>
         </div>
     </div>
-    
+
     <div class="row">
         <div class="col-md-8">
             <div class="card">
@@ -19,7 +19,7 @@
                 <div class="card-body">
                     <form method="post" action="{{ url_for('user_interests') }}">
                         {{ form.hidden_tag() }}
-                        
+
                         <div class="checkbox-group">
                             {% for choice in form.interests.choices %}
                             <div class="checkbox-item">
@@ -29,7 +29,7 @@
                             </div>
                             {% endfor %}
                         </div>
-                        
+
                         <div class="form-group mt-4">
                             {{ form.submit(class="btn btn-primary") }}
                         </div>
@@ -37,38 +37,33 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4">
-            <div class="card">
+            <div class="card" style="position: relative; z-index: 1;">
                 <div class="card-header">
                     <h3>Interest Access Status</h3>
                 </div>
                 <div class="card-body">
                     {% if user_interests %}
-                    <div class="interest-status-list">
-                        {% for interest in user_interests %}
-                        {% if interest.selected %}
-                        <div class="interest-status-item">
-                            <div class="interest-info">
-                                <h5 class="interest-name">{{ interest.interest.name }}</h5>
-                                <p class="interest-description">{{ interest.interest.description }}</p>
+                        <div class="interest-status-list">
+                            {% for ui in user_interests %}
+                            <div class="interest-status-item" style="margin-bottom: 15px; padding: 10px; border: 1px solid #dee2e6; border-radius: 5px; background-color: #f8f9fa;">
+                                <div class="interest-info">
+                                    <h5 style="color: #333; margin-bottom: 8px;">{{ ui.interest.name }}</h5>
+                                    <p style="color: #666; margin-bottom: 8px;">{{ ui.interest.description }}</p>
+                                </div>
+                                <div class="status-badge">
+                                    {% if ui.access_granted %}
+                                        <span class="badge badge-success">Access Granted</span>
+                                    {% else %}
+                                        <span class="badge badge-warning">Pending Approval</span>
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div class="status-badge">
-                                {% if interest.access_granted %}
-                                <span class="badge badge-success"><i class="fas fa-check"></i> Access Granted</span>
-                                {% else %}
-                                <span class="badge badge-warning"><i class="fas fa-clock"></i> Pending Approval</span>
-                                {% endif %}
-                            </div>
+                            {% endfor %}
                         </div>
-                        {% endif %}
-                        {% endfor %}
-                    </div>
                     {% else %}
-                    <div class="no-interests">
-                        <i class="fas fa-info-circle"></i>
-                        <p>You haven't selected any interests yet. Select interests on the left to see their status here.</p>
-                    </div>
+                        <p>No interests selected. Use the form on the left to select your interests.</p>
                     {% endif %}
                 </div>
             </div></div>
