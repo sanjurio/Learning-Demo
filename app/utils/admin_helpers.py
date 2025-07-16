@@ -36,17 +36,27 @@ def set_user_video_access(user_id, video_access):
     return False
 
 def grant_interest_access(user_id, interest_id):
-    """Grant user access to an interest"""
+    """Grant a user access to content related to an interest"""
+    from flask_login import current_user
+    from datetime import datetime
+
     user_interest = UserInterest.query.filter_by(
-        user_id=user_id, 
+        user_id=user_id,
         interest_id=interest_id
     ).first()
-    
-    if user_interest:
-        user_interest.access_granted = True
-        db.session.commit()
-        return True
-    return False
+
+    if not user_interest:
+        user_interest = UserInterest(
+            user_id=user_id,
+            interest_id=interest_id
+        )
+        db.session.add(user_interest)
+
+    user_interest.access_granted = True
+    user_interest.granted_at = datetime.utcnow()
+    user_interest.granted_by = current_user.id
+    db.session.commit()
+    return True
 
 def revoke_interest_access(user_id, interest_id):
     """Revoke user access to an interest"""
@@ -54,7 +64,7 @@ def revoke_interest_access(user_id, interest_id):
         user_id=user_id, 
         interest_id=interest_id
     ).first()
-    
+
     if user_interest:
         user_interest.access_granted = False
         db.session.commit()

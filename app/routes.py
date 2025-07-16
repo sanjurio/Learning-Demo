@@ -922,14 +922,10 @@ def register_routes(app):
                 ).first()
 
                 if action == 'approve':
-                    if user_interest:
-                        user_interest.access_granted = True
-                        user_interest.granted_at = datetime.utcnow()
-                        user_interest.granted_by = current_user.id
-                        db.session.commit()
+                    if grant_interest_access(user_id, interest_id):
                         flash('Interest access approved successfully.', 'success')
                     else:
-                        flash('Interest request not found.', 'danger')
+                        flash('Error approving interest access.', 'danger')
                 elif action == 'reject':
                     if user_interest:
                         db.session.delete(user_interest)
@@ -973,10 +969,10 @@ def register_routes(app):
 
                         if user_interest:
                             if bulk_action == 'approve':
-                                user_interest.access_granted = True
-                                user_interest.granted_at = datetime.utcnow()
-                                user_interest.granted_by = current_user.id
-                                success_count += 1
+                                if grant_interest_access(user_id, interest_id):
+                                    success_count += 1
+                                else:
+                                    error_count += 1
                             elif bulk_action == 'reject':
                                 db.session.delete(user_interest)
                                 success_count += 1
