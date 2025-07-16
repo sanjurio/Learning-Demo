@@ -23,7 +23,13 @@ def get_user_accessible_courses(user):
     course_ids = [ci.course_id for ci in course_interests]
     courses = Course.query.filter(Course.id.in_(course_ids)).all() if course_ids else []
     
-    return courses
+    # Filter courses based on domain access restrictions
+    accessible_courses = []
+    for course in courses:
+        if course.user_can_access_course(user):
+            accessible_courses.append(course)
+    
+    return accessible_courses
 
 def get_recommended_courses(user):
     """Get recommended courses based on user interests"""
@@ -41,6 +47,12 @@ def user_can_access_course(user, course):
     
     if user.is_admin:
         return True
+    
+    # First check domain-specific restrictions
+    if course.is_thbs_restricted():
+        # Only THBS domain users can access erlang-l3 courses
+        if user.email_domain != 'thbs.com':
+            return False
     
     # Check if user has access through interests
     user_interests = UserInterest.query.filter_by(

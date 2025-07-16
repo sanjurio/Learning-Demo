@@ -152,6 +152,28 @@ class Course(db.Model):
     lessons = db.relationship('Lesson', backref='course', lazy='dynamic', cascade='all, delete-orphan')
     forum_topics = db.relationship('ForumTopic', backref='course', lazy='dynamic')
     
+    def is_thbs_restricted(self):
+        """Check if this course is restricted to THBS domain users only"""
+        # Check if the course title contains "erlang-l3" (case-insensitive)
+        return 'erlang-l3' in self.title.lower()
+    
+    def user_can_access_course(self, user):
+        """Check if a user can access this course based on domain restrictions"""
+        if not user.is_authenticated or not user.is_approved:
+            return False
+            
+        # Admins can access everything
+        if user.is_admin:
+            return True
+            
+        # Check if this is a THBS-restricted course
+        if self.is_thbs_restricted():
+            # Only THBS domain users can access erlang-l3 courses
+            return user.email_domain == 'thbs.com'
+            
+        # For non-restricted courses, check regular interest-based access
+        return True  # Will be checked by existing interest-based logic
+    
     def __repr__(self):
         return f'<Course {self.title}>'
 

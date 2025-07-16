@@ -23,6 +23,17 @@
             <div class="{% if course.cover_image_url %}col-md-8{% else %}col-md-12{% endif %}">
                 <div class="card-body">
                     <h1 class="card-title">{{ course.title }}</h1>
+                    
+                    {% if course.is_thbs_restricted() %}
+                    <div class="alert alert-warning d-flex align-items-center mb-3">
+                        <i class="fas fa-lock me-2"></i>
+                        <div>
+                            <strong>Domain Restricted Content</strong><br>
+                            <small>This course contains advanced Erlang-L3 content accessible only to THBS domain users.</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     <p class="card-text">{{ course.description }}</p>
                     <p class="card-text"><small class="text-muted">Last updated: {{ course.updated_at.strftime('%d %b, %Y') }}</small></p>
 

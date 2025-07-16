@@ -22,6 +22,14 @@ Preferred communication style: Simple, everyday language.
 ✓ Created sample courses and lessons to demonstrate access control
 ✓ Fixed admin approval system - all users now require admin approval before login
 ✓ Updated database schema with required columns for new features
+✓ Implemented comprehensive dashboard enhancements with progress tracking
+✓ Added interactive learning features (bookmarks, notes, progress tracking)
+✓ Created domain-specific course access control based on keywords:
+  - Courses containing "erlang-l3" (case-insensitive) are restricted to THBS domain users only
+  - BT domain users cannot access erlang-l3 courses
+  - Added visual indicators and warnings for restricted courses
+✓ Enhanced course filtering and access control in user dashboard and course views
+✓ Added API endpoints for interactive features (bookmarks, notes, progress)
 
 ## System Architecture
 
