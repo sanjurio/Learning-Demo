@@ -317,9 +317,19 @@ def register_routes(app):
         form.interests.choices = [(i.id, i.name) for i in all_interests]
         
         if form.validate_on_submit():
-            # Handle form submission - update user interest selections
-            # This would typically update which interests the user has selected
-            # (not granted access, just expressed interest in)
+            # Clear existing selections
+            UserInterest.query.filter_by(user_id=current_user.id).delete()
+            
+            # Add new selections
+            for interest_id in form.interests.data:
+                user_interest = UserInterest(
+                    user_id=current_user.id,
+                    interest_id=interest_id,
+                    access_granted=False
+                )
+                db.session.add(user_interest)
+            
+            db.session.commit()
             flash('Your interest selections have been updated and are pending admin approval.', 'success')
             return redirect(url_for('user_interests'))
         
@@ -708,17 +718,74 @@ def register_routes(app):
                                course=course,
                                topics=topics)
 
-    # API Keys management
-    @app.route('/admin/api-keys', methods=['GET', 'POST'])
+    # Admin interest requests management
+    @app.route('/admin/interest-requests')
     @login_required
-    def admin_api_keys():
+    def admin_user_interest_requests():
         if not current_user.is_admin:
             abort(403)
 
-        form = ApiKeyForm()
-        if form.validate_on_submit():
-            # In a real app, you'd save this securely
-            flash('API key saved successfully!', 'success')
-            return redirect(url_for('admin_api_keys'))
+        # Get all user interests that are not yet granted access
+        pending_requests = db.session.query(UserInterest, User, Interest).join(
+            User, UserInterest.user_id == User.id
+        ).join(
+            Interest, UserInterest.interest_id == Interest.id
+        ).filter(UserInterest.access_granted == False).all()
 
-        return render_template('admin/api_keys.html', title='API Keys', form=form)
+        # Convert to a list of objects with user and interest attributes
+        pending_list = []
+        for ui, user, interest in pending_requests:
+            pending_list.append({
+                'user': user,
+                'interest': interest,
+                'user_interest': ui
+            })
+
+        return render_template('admin/user_interest_requests.html',
+                               title='User Interest Requests',
+                               pending_requests=pending_list)
+
+    @app.route('/admin/approve-interest-request', methods=['POST'])
+    @login_required
+    def admin_approve_interest_request():
+        if not current_user.is_admin:
+            abort(403)
+
+        user_id = request.form.get('user_id')
+        interest_id = request.form.get('interest_id')
+        action = request.form.get('action')
+
+        if user_id and interest_id and action:
+            try:
+                user_id = int(user_id)
+                interest_id = int(interest_id)
+                
+                user_interest = UserInterest.query.filter_by(
+                    user_id=user_id,
+                    interest_id=interest_id
+                ).first()
+                
+                if action == 'approve':
+                    if user_interest:
+                        user_interest.access_granted = True
+                        user_interest.granted_at = datetime.utcnow()
+                        user_interest.granted_by = current_user.id
+                        db.session.commit()
+                        flash('Interest access approved successfully.', 'success')
+                    else:
+                        flash('Interest request not found.', 'danger')
+                elif action == 'reject':
+                    if user_interest:
+                        db.session.delete(user_interest)
+                        db.session.commit()
+                        flash('Interest request rejected and removed.', 'success')
+                    else:
+                        flash('Interest request not found.', 'danger')
+                else:
+                    flash('Invalid action specified.', 'danger')
+            except ValueError:
+                flash('Invalid user or interest ID.', 'danger')
+        else:
+            flash('Missing required form data.', 'danger')
+
+        return redirect(url_for('admin_user_interest_requests'))

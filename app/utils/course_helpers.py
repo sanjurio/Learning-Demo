@@ -56,5 +56,17 @@ def user_can_access_course(user, course):
 
 def get_user_interests_status(user_id):
     """Get user interests with their access status"""
-    user_interests = UserInterest.query.filter_by(user_id=user_id).all()
-    return {ui.interest_id: ui.access_granted for ui in user_interests}
+    from .. import db
+    user_interests = db.session.query(UserInterest, Interest).join(
+        Interest, UserInterest.interest_id == Interest.id
+    ).filter(UserInterest.user_id == user_id).all()
+    
+    result = []
+    for ui, interest in user_interests:
+        result.append({
+            'interest': interest,
+            'access_granted': ui.access_granted,
+            'selected': True
+        })
+    
+    return result

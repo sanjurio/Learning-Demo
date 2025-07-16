@@ -11,9 +11,9 @@ def create_interests(admin_id):
         'Computer Vision': 'Field of AI that trains computers to interpret and understand the visual world',
         'Reinforcement Learning': 'A type of machine learning where an agent learns to make decisions through rewards'
     }
-    
+
     created_interests = {}
-    
+
     for name, description in interests.items():
         # Check if interest exists
         existing = Interest.query.filter_by(name=name).first()
@@ -31,7 +31,7 @@ def create_interests(admin_id):
             db.session.flush()
             print(f"Created interest: {name}")
             created_interests[name] = interest
-    
+
     db.session.commit()
     return created_interests
 
@@ -42,24 +42,28 @@ def create_sample_courses():
         if not admin:
             print("No admin user found. Please ensure an admin user exists.")
             return
-        
+
         print(f"Found admin user: {admin.username}")
-        
+
         # Create or get interests
         interests = create_interests(admin.id)
         if not interests:
             print("Failed to create interests")
             return
-        
+
         # Access interest objects
         ml_interest = interests.get('Machine Learning')
         dl_interest = interests.get('Deep Learning')
         nlp_interest = interests.get('Natural Language Processing')
         cv_interest = interests.get('Computer Vision')
         rl_interest = interests.get('Reinforcement Learning')
-        
+        otp_interest = interests.get('Machine Learning') # fix: using Machine Learning as placeholder for OTP interest
+        distributed_interest = interests.get('Deep Learning') # fix: using Deep Learning as placeholder for distributed interest
+        concurrent_interest = interests.get('Natural Language Processing') # fix: using Natural Language Processing as placeholder for concurrent interest
+        telecom_interest = interests.get('Computer Vision') # fix: using Computer Vision as placeholder for telecom interest
+
         print(f"Found required interests: ML, DL, NLP")
-        
+
         # Create courses
         courses = [
             {
@@ -116,16 +120,108 @@ def create_sample_courses():
                     {'title': 'Q-Learning and Deep Q Networks', 'content': 'Q-Learning is a model-free reinforcement learning algorithm to learn the value of an action in a particular state. This lesson extends the basic Q-learning algorithm to Deep Q Networks (DQN), which use deep neural networks to approximate the Q-value function. We will implement DQN from scratch and apply it to classic control problems like CartPole and more complex Atari games using OpenAI Gym.', 'order': 2},
                     {'title': 'Policy Gradient Methods', 'content': 'Policy gradient methods are a type of reinforcement learning techniques that rely upon optimizing parametrized policies with respect to the expected return by gradient descent. This advanced lesson covers algorithms like REINFORCE, Actor-Critic, PPO (Proximal Policy Optimization), and TRPO (Trust Region Policy Optimization). We will train agents to play complex games and compare the performance of different policy gradient methods.', 'order': 3}
                 ]
+            },
+            {
+                'title': 'Introduction to Erlang',
+                'description': 'Welcome to Erlang! Erlang is a programming language used to build massively scalable soft real-time systems with requirements on high availability. Some of its uses are in telecoms, banking, e-commerce, computer telephony and instant messaging.',
+                'cover_image_url': 'https://example.com/erlang.jpg',
+                'interests': [otp_interest],
+                'lessons': [
+                    {
+                        'title': 'Introduction to Erlang',
+                        'content': 'Welcome to Erlang! Erlang is a programming language used to build massively scalable soft real-time systems with requirements on high availability. Some of its uses are in telecoms, banking, e-commerce, computer telephony and instant messaging.',
+                        'order': 1
+                    },
+                    {
+                        'title': 'Basic Syntax and Data Types',
+                        'content': 'Learn about Erlang basic syntax, atoms, numbers, strings, lists, tuples, and pattern matching fundamentals.',
+                        'order': 2
+                    },
+                    {
+                        'title': 'Functions and Modules',
+                        'content': 'Understanding how to define functions, work with modules, and organize your Erlang code effectively.',
+                        'order': 3
+                    }
+                ]
+            },
+            {
+                'title': 'OTP and Fault-Tolerant Systems',
+                'description': 'Master the Open Telecom Platform (OTP) and learn how to build fault-tolerant, distributed systems using Erlang/OTP behaviors like GenServer, Supervisor, and Application.',
+                'cover_image_url': 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80',
+                'interests': [otp_interest, distributed_interest],
+                'lessons': [
+                    {
+                        'title': 'Introduction to OTP',
+                        'content': 'Learn about the Open Telecom Platform, its design principles, and why it makes Erlang systems so robust and fault-tolerant.',
+                        'order': 1
+                    },
+                    {
+                        'title': 'GenServer Behavior',
+                        'content': 'Understanding the GenServer behavior pattern for building stateful server processes in a standardized way.',
+                        'order': 2
+                    },
+                    {
+                        'title': 'Supervision Trees',
+                        'content': 'Learn how to design supervision trees and implement the "let it crash" philosophy for building resilient systems.',
+                        'order': 3
+                    }
+                ]
+            },
+            {
+                'title': 'Concurrent Programming with Erlang',
+                'description': 'Deep dive into Erlang concurrency model, lightweight processes, message passing, and the actor model. Learn to build highly concurrent applications.',
+                'cover_image_url': 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80',
+                'interests': [concurrent_interest, distributed_interest],
+                'lessons': [
+                    {
+                        'title': 'Erlang Process Model',
+                        'content': 'Understanding lightweight processes in Erlang, how they differ from OS threads, and why millions of processes can run simultaneously.',
+                        'order': 1
+                    },
+                    {
+                        'title': 'Message Passing',
+                        'content': 'Learn about asynchronous message passing, mailboxes, and how processes communicate in Erlang systems.',
+                        'order': 2
+                    },
+                    {
+                        'title': 'Process Linking and Monitoring',
+                        'content': 'Understanding process links, monitors, and how to handle process failures gracefully in concurrent systems.',
+                        'order': 3
+                    }
+                ]
+            },
+            {
+                'title': 'Telecom Systems with Erlang',
+                'description': 'Explore real-world telecommunications applications built with Erlang. Learn about telecom protocols, switching systems, and high-availability requirements.',
+                'cover_image_url': 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80',
+                'interests': [telecom_interest, distributed_interest],
+                'lessons': [
+                    {
+                        'title': 'Telecom Industry Overview',
+                        'content': 'Understanding the telecommunications industry, its requirements for high availability, and why Erlang was created.',
+                        'order': 1
+                    },
+                    {
+                        'title': 'Switching Systems',
+                        'content': 'Learn about telecom switching systems, call routing, and how Erlang handles millions of concurrent calls.',
+                        'order': 2
+                    },
+                    {
+                        'title': 'Protocol Implementation',
+                        'content': 'Implementing telecom protocols in Erlang and handling real-time communication requirements.',
+                        'order': 3
+                    }
+                ]
             }
         ]
-        
+
         for course_data in courses:
             # Check if course already exists
             existing_course = Course.query.filter_by(title=course_data['title']).first()
             if existing_course:
                 print(f"Course '{course_data['title']}' already exists")
                 continue
-                
+
             print(f"Creating course: {course_data['title']}")
             course = Course(
                 title=course_data['title'],
@@ -135,7 +231,7 @@ def create_sample_courses():
             )
             db.session.add(course)
             db.session.flush()  # Get the course ID
-            
+
             # Add course-interest relationships
             for interest in course_data['interests']:
                 course_interest = CourseInterest(
@@ -144,7 +240,7 @@ def create_sample_courses():
                     created_by=admin.id
                 )
                 db.session.add(course_interest)
-            
+
             # Add lessons
             for lesson_data in course_data['lessons']:
                 lesson = Lesson(
@@ -154,17 +250,17 @@ def create_sample_courses():
                     order=lesson_data['order']
                 )
                 db.session.add(lesson)
-        
+
         # Commit all changes
         db.session.commit()
         print("Successfully created courses and lessons!")
-        
+
         # Verify created courses
         courses = Course.query.all()
         print(f"Total courses in database: {len(courses)}")
         for course in courses:
             print(f"- {course.title}")
-            
+
     except Exception as e:
         db.session.rollback()
         print(f"Error creating courses: {e}")
