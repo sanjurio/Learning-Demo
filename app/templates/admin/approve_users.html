@@ -32,14 +32,25 @@
                 <div class="user-info">
                     <div class="user-name">{{ user.username }}</div>
                     <div class="user-email">{{ user.email }}</div>
+                    <div class="user-domain">Domain: {{ user.email_domain or 'Unknown' }}</div>
+                    <div class="user-access">Default Access: {{ user.access_level or 'basic' }}</div>
                     <div class="user-registered">Registered on {{ user.created_at.strftime('%d %b, %Y at %H:%M') }}</div>
                 </div>
                 
                 <div class="approval-actions">
-                    <form method="post" action="{{ url_for('admin_approve_user') }}">
+                    <form method="post" action="{{ url_for('admin_approve_user') }}" class="approval-form">
                         <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}" />
                         <input type="hidden" name="user_id" value="{{ user.id }}" />
                         <input type="hidden" name="action" value="approve" />
+                        
+                        <div class="video-access-control">
+                            <label for="video_access_{{ user.id }}">Video Access:</label>
+                            <select name="video_access" id="video_access_{{ user.id }}" class="form-control">
+                                <option value="off" {% if user.access_level == 'text_only' %}selected{% endif %}>Text Only</option>
+                                <option value="on" {% if user.access_level == 'full_access' %}selected{% endif %}>Video + Text</option>
+                            </select>
+                        </div>
+                        
                         <button type="submit" class="btn btn-success">
                             <i class="fas fa-check"></i> Approve
                         </button>

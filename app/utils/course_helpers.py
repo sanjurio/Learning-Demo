@@ -1,4 +1,4 @@
-from models import User, Course, Interest, UserInterest, UserCourse, CourseInterest
+from ..models import User, Course, Interest, UserInterest, UserCourse, CourseInterest
 
 def get_user_accessible_courses(user):
     """Get courses accessible to a user based on their interests and approval status"""

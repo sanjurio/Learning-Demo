@@ -2,7 +2,7 @@
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from app import db, login_manager
+from . import db, login_manager
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -46,7 +46,7 @@ class User(UserMixin, db.Model):
     
     def set_access_based_on_domain(self):
         """Set user access level based on email domain"""
-        from utils.auth_helpers import get_domain_access_info
+        from .utils.auth_helpers import get_domain_access_info
         if self.email:
             domain = self.email.split('@')[-1].lower()
             self.email_domain = domain

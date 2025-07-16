@@ -2,7 +2,7 @@ import pyotp
 import qrcode
 import io
 import base64
-from config import Config
+from ..config import Config
 
 def generate_otp_secret():
     """Generate a new OTP secret for 2FA"""
