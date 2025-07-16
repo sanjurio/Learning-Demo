@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block styles %}
@@ -8,7 +7,7 @@
 {% block content %}
 <div class="section">
     <h1 class="section-title">User Interest Requests</h1>
-    
+
     <div class="admin-nav">
         <ul>
             <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
@@ -45,7 +44,7 @@
             <a href="{{ url_for('admin_interests') }}" class="btn btn-primary">Manage</a>
         </div>
     </div>
-    
+
     <div class="admin-container">
         <div class="card">
             <div class="card-header">
@@ -67,57 +66,93 @@
                         <i class="fas fa-times"></i> Reject Selected
                     </button>
                 </div>
-                
+
                 <form id="bulkActionForm" method="post" action="{{ url_for('admin_bulk_interest_requests') }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="bulk_action" id="bulkActionInput" value="">
-                    
+
                     <div class="responsive-table">
                         <table class="user-table">
                             <thead>
                                 <tr>
-                                    <th><input type="checkbox" id="masterCheckbox"></th>
-                                    <th>User</th>
-                                    <th>Email</th>
-                                    <th>Interest</th>
-                                    <th>Requested Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for request in pending_requests %}
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" name="selected_requests" 
-                                               value="{{ request.user.id }}-{{ request.interest.id }}" 
-                                               class="request-checkbox">
-                                    </td>
-                                    <td>{{ request.user.username }}</td>
-                                    <td>{{ request.user.email }}</td>
-                                    <td>{{ request.interest.name }}</td>
-                                    <td>{{ request.user.created_at.strftime('%d %b, %Y') }}</td>
-                                    <td>
-                                        <form method="post" action="{{ url_for('admin_approve_interest_request') }}" style="display: inline;">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <input type="hidden" name="user_id" value="{{ request.user.id }}">
-                                            <input type="hidden" name="interest_id" value="{{ request.interest.id }}">
-                                            <input type="hidden" name="action" value="approve">
-                                            <button type="submit" class="btn btn-success btn-sm">
-                                                <i class="fas fa-check"></i> Approve
-                                            </button>
-                                        </form>
-                                        <form method="post" action="{{ url_for('admin_approve_interest_request') }}" style="display: inline;">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <input type="hidden" name="user_id" value="{{ request.user.id }}">
-                                            <input type="hidden" name="interest_id" value="{{ request.interest.id }}">
-                                            <input type="hidden" name="action" value="reject">
-                                            <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="fas fa-times"></i> Reject
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {% endfor %}
+                                    <th style="width: 40px;">
+                        <input type="checkbox" id="masterCheckbox" onclick="toggleAllCheckboxes(this)" />
+                    </th>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Interest</th>
+                    <th>Requested Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set processed_users = {} %}
+                {% for request in pending_requests %}
+                    {% if request.user.email not in processed_users %}
+                        {% set _ = processed_users.update({request.user.email: []}) %}
+                    {% endif %}
+                    {% set _ = processed_users[request.user.email].append(request) %}
+                {% endfor %}
+
+                {% for email, user_requests in processed_users.items() %}
+                    {% set first_request = user_requests[0] %}
+                    <tr>
+                        <td rowspan="{{ user_requests|length }}">
+                            <input type="checkbox" name="selected_requests" value="{{ first_request.user.id }}-all" class="request-checkbox" />
+                        </td>
+                        <td rowspan="{{ user_requests|length }}">{{ first_request.user.username }}</td>
+                        <td rowspan="{{ user_requests|length }}">{{ email }}</td>
+                        <td>{{ user_requests[0].interest.name }}</td>
+                        <td>{{ user_requests[0].user_interest.created_at.strftime('%d %b, %Y') if user_requests[0].user_interest.created_at else 'N/A' }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('admin_approve_interest_request') }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="user_id" value="{{ user_requests[0].user.id }}" />
+                                <input type="hidden" name="interest_id" value="{{ user_requests[0].interest.id }}" />
+                                <input type="hidden" name="action" value="approve" />
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                            </form>
+                            <form method="post" action="{{ url_for('admin_approve_interest_request') }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="user_id" value="{{ user_requests[0].user.id }}" />
+                                <input type="hidden" name="interest_id" value="{{ user_requests[0].interest.id }}" />
+                                <input type="hidden" name="action" value="reject" />
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% for request in user_requests[1:] %}
+                    <tr>
+                        <td>{{ request.interest.name }}</td>
+                        <td>{{ request.user_interest.created_at.strftime('%d %b, %Y') if request.user_interest.created_at else 'N/A' }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('admin_approve_interest_request') }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="user_id" value="{{ request.user.id }}" />
+                                <input type="hidden" name="interest_id" value="{{ request.interest.id }}" />
+                                <input type="hidden" name="action" value="approve" />
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                            </form>
+                            <form method="post" action="{{ url_for('admin_approve_interest_request') }}" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <input type="hidden" name="user_id" value="{{ request.user.id }}" />
+                                <input type="hidden" name="interest_id" value="{{ request.interest.id }}" />
+                                <input type="hidden" name="action" value="reject" />
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+                
                             </tbody>
                         </table>
                     </div>
@@ -128,3 +163,7 @@
     </div>
 </div>
 {% endblock %}
+```
+
+```
+Analysis: The code has been modified to remove individual checkboxes for each interest and instead group interests by email, displaying the email once and listing interests as subcategories.  It also includes changes to how the bulk actions are handled and how individual actions are performed.

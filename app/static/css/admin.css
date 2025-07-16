@@ -472,3 +472,20 @@ input:checked + .slider:before {
     text-align: center;
     width: 40px;
 }
+
+/* Grouped table rows styling */
+.user-table tr td[rowspan] {
+    vertical-align: top;
+    border-right: 2px solid #e9ecef;
+    background-color: #f8f9fa;
+}
+
+.user-table tr:nth-child(even) td[rowspan] {
+    background-color: #f1f3f4;
+}
+
+/* Sub-row styling for interests */
+.user-table tr td:not([rowspan]) {
+    border-left: 2px solid #e9ecef;
+    padding-left: 15px;
+}

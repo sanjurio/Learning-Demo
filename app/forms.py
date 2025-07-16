@@ -36,6 +36,13 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
             raise ValidationError('Please use a different email address.')
+        
+        # Check if email domain is allowed
+        if email.data:
+            domain = email.data.split('@')[-1].lower()
+            allowed_domains = ['bt.com', 'thbs.com']
+            if domain not in allowed_domains:
+                raise ValidationError('Registration is only allowed for BT and THBS employees. Please use your company email address.')
             
 class TwoFactorForm(FlaskForm):
     token = StringField('Authentication Code', validators=[
