@@ -1,8 +1,8 @@
-# AI-Powered Learning Platform
+# Erlang Systems Learning Platform
 
 ## Overview
 
-This is a comprehensive AI-powered learning platform built with Flask that provides intelligent content management, personalized learning experiences, and enhanced user engagement through educational technologies. The platform features user registration with mandatory 2FA, admin approval systems, role-based access control, AI-powered course recommendations, discussion forums, and document analysis capabilities.
+This is a comprehensive Erlang Systems learning platform built with Flask that provides enterprise-grade training, certification, and knowledge management for Erlang/OTP development. The platform features user registration with mandatory 2FA, admin approval systems, domain-based access control, specialized content delivery, discussion forums, and document analysis capabilities for Erlang documentation.
 
 ## User Preferences
 
@@ -57,11 +57,17 @@ Preferred communication style: Simple, everyday language.
 - **Lessons**: Sequential lesson structure with progress tracking
 - **Forums**: Both general and course-specific discussion areas
 
-### AI-Powered Features
-- **Document Analysis**: PDF, DOCX, and TXT file processing with OpenAI integration
-- **Content Summarization**: Automatic summary generation from uploaded documents
-- **Q&A Generation**: AI-powered question and answer creation from document content
-- **Course Recommendations**: Personalized course suggestions based on user interests
+### Domain-Based Access Control
+- **THBS Users (@thbs.com)**: Full access to both text and video content including Erlang system demonstrations
+- **BT Users (@bt.com)**: Text-only access to Erlang documentation and tutorials
+- **Other Domains**: Basic access requiring individual admin approval
+- **Video Access Control**: Erlang system demonstrations restricted based on user domain
+
+### Content Management Features
+- **Document Analysis**: PDF, DOCX, and TXT file processing for Erlang documentation
+- **Content Summarization**: Automatic summary generation from Erlang technical documents
+- **Mixed Content Support**: Lessons with both text documentation and video demonstrations
+- **Access-Level Filtering**: Content visibility based on user's domain and approval status
 
 ### Administrative Features
 - **User Management**: Approve/reject user registrations, manage access permissions

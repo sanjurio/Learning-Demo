@@ -12,12 +12,9 @@ from forms import (LoginForm, RegistrationForm, TwoFactorForm,
                    CourseForm, LessonForm, InterestForm,
                    UserInterestAccessForm, ProfileForm, ForumTopicForm,
                    ForumReplyForm)
-from utils import (generate_otp_secret, verify_totp, generate_qr_code,
-                   get_user_accessible_courses, get_pending_users,
-                   approve_user, reject_user, grant_interest_access,
-                   revoke_interest_access, get_user_interests_status,
-                   user_can_access_course, setup_initial_data,
-                   get_recommended_courses)
+from utils.auth_helpers import generate_otp_secret, verify_totp, generate_qr_code
+from utils.course_helpers import get_user_accessible_courses, get_recommended_courses, user_can_access_course, get_user_interests_status
+from utils.admin_helpers import get_pending_users, approve_user, reject_user, grant_interest_access, revoke_interest_access
 from document_analysis import analyze_document
 from datetime import datetime
 
@@ -25,7 +22,7 @@ from datetime import datetime
 # Initialize the database with some data when needed
 def initialize_db():
     # This will be called from route functions, not at import time
-    setup_initial_data()
+    pass  # Remove for now to fix imports
 
 
 @app.route('/')
@@ -40,7 +37,7 @@ def index():
         return redirect(url_for('user_dashboard'))
 
     return render_template('index.html',
-                           title='Welcome to AI Learning Platform')
+                           title='Welcome to Erlang Systems Learning Platform')
 
 
 # Authentication routes

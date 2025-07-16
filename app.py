@@ -7,11 +7,12 @@ from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.middleware.proxy_fix import ProxyFix
+from config import Config
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-logger.debug("Starting application")
+logger.debug("Starting Erlang Systems Learning Platform")
 
 # Create base class for SQLAlchemy models
 class Base(DeclarativeBase):
@@ -22,22 +23,16 @@ db = SQLAlchemy(model_class=Base)
 
 # Create the Flask app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-key-change-in-production")
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # needed for url_for to generate with https
+app.config.from_object(Config)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure the database
-database_url = os.environ.get("DATABASE_URL")
-# Use SQLite locally if no DATABASE_URL environment variable is set
+database_url = app.config['DATABASE_URL']
 if not database_url:
-    database_url = "sqlite:///app.db"
+    database_url = "sqlite:///erlang_systems.db"
     logger.debug("Using local SQLite database")
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
-    "pool_pre_ping": True,
-}
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Print debug info
 logger.debug(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")

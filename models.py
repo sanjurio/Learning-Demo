@@ -46,26 +46,21 @@ class User(UserMixin, db.Model):
     
     def set_access_based_on_domain(self):
         """Set user access level based on email domain"""
+        from utils.auth_helpers import get_domain_access_info
         if self.email:
             domain = self.email.split('@')[-1].lower()
             self.email_domain = domain
             
-            if domain == 'thbs.com':
-                self.access_level = 'full_access'
-                self.is_approved = False  # Still require admin approval
-            elif domain == 'bt.com':
-                self.access_level = 'text_only'  
-                self.is_approved = False  # Still require admin approval
-            else:
-                self.access_level = 'basic'
-                self.is_approved = False  # Require admin approval for others
+            access_info = get_domain_access_info(self.email)
+            self.access_level = access_info['access_level']
+            self.is_approved = False  # Always require admin approval
     
     def can_view_videos(self):
-        """Check if user can view video content"""
+        """Check if user can view video content (Erlang system demonstrations)"""
         return self.access_level == 'full_access'
     
     def can_view_text(self):
-        """Check if user can view text content"""
+        """Check if user can view text content (Erlang documentation and tutorials)"""
         return self.access_level in ['text_only', 'full_access']
     
     def __repr__(self):
