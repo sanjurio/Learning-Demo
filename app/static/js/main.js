@@ -173,13 +173,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         console.log('Interest requests page detected');
         console.log('Found checkboxes:', requestCheckboxes.length);
-        console.log('Found select all button:', selectAllBtn);
-        console.log('Found bulk form:', bulkActionForm);
+        console.log('Found select all button:', selectAllBtn ? 'Yes' : 'No');
+        console.log('Found bulk form:', bulkActionForm ? 'Yes' : 'No');
 
         if (requestCheckboxes.length > 0) {
             // Select all button
             if (selectAllBtn) {
-                selectAllBtn.addEventListener('click', function() {
+                selectAllBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
                     console.log('Select all clicked');
                     requestCheckboxes.forEach(checkbox => {
                         checkbox.checked = true;
@@ -189,7 +190,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Deselect all button
             if (deselectAllBtn) {
-                deselectAllBtn.addEventListener('click', function() {
+                deselectAllBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
                     console.log('Deselect all clicked');
                     requestCheckboxes.forEach(checkbox => {
                         checkbox.checked = false;
@@ -199,7 +201,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Bulk approve button
             if (bulkApproveBtn && bulkActionForm && bulkActionInput) {
-                bulkApproveBtn.addEventListener('click', function() {
+                bulkApproveBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
                     const checkedBoxes = document.querySelectorAll('.request-checkbox:checked');
                     console.log('Bulk approve clicked, checked boxes:', checkedBoxes.length);
                     
@@ -218,7 +221,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Bulk reject button
             if (bulkRejectBtn && bulkActionForm && bulkActionInput) {
-                bulkRejectBtn.addEventListener('click', function() {
+                bulkRejectBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
                     const checkedBoxes = document.querySelectorAll('.request-checkbox:checked');
                     console.log('Bulk reject clicked, checked boxes:', checkedBoxes.length);
                     

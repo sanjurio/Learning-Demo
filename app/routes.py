@@ -911,34 +911,53 @@ def register_routes(app):
         interest_id = request.form.get('interest_id')
         action = request.form.get('action')
 
-        if user_id and interest_id and action:
-            try:
-                user_id = int(user_id)
-                interest_id = int(interest_id)
+        print(f"DEBUG: Individual action - user_id: {user_id}, interest_id: {interest_id}, action: {action}")
 
-                user_interest = UserInterest.query.filter_by(
-                    user_id=user_id,
-                    interest_id=interest_id
-                ).first()
+        if not user_id or not interest_id or not action:
+            flash('Missing required form data. Please try again.', 'danger')
+            return redirect(url_for('admin_user_interest_requests'))
 
-                if action == 'approve':
-                    if grant_interest_access(user_id, interest_id):
-                        flash('Interest access approved successfully.', 'success')
-                    else:
-                        flash('Error approving interest access.', 'danger')
-                elif action == 'reject':
-                    if user_interest:
-                        db.session.delete(user_interest)
-                        db.session.commit()
-                        flash('Interest request rejected and removed.', 'success')
-                    else:
-                        flash('Interest request not found.', 'danger')
+        try:
+            user_id = int(user_id)
+            interest_id = int(interest_id)
+
+            # Check if the user interest record exists
+            user_interest = UserInterest.query.filter_by(
+                user_id=user_id,
+                interest_id=interest_id,
+                access_granted=False
+            ).first()
+
+            if not user_interest:
+                flash('Interest request not found or already processed.', 'warning')
+                return redirect(url_for('admin_user_interest_requests'))
+
+            if action == 'approve':
+                if grant_interest_access(user_id, interest_id):
+                    # Get user and interest names for the flash message
+                    user = User.query.get(user_id)
+                    interest = Interest.query.get(interest_id)
+                    flash(f'Interest access approved for {user.username} - {interest.name}.', 'success')
                 else:
-                    flash('Invalid action specified.', 'danger')
-            except ValueError:
-                flash('Invalid user or interest ID.', 'danger')
-        else:
-            flash('Missing required form data.', 'danger')
+                    flash('Error approving interest access.', 'danger')
+            elif action == 'reject':
+                # Get user and interest names for the flash message before deletion
+                user = User.query.get(user_id)
+                interest = Interest.query.get(interest_id)
+                
+                db.session.delete(user_interest)
+                db.session.commit()
+                flash(f'Interest request rejected for {user.username} - {interest.name}.', 'success')
+            else:
+                flash('Invalid action specified.', 'danger')
+                
+        except ValueError as e:
+            print(f"DEBUG: ValueError in individual action: {e}")
+            flash('Invalid user or interest ID format.', 'danger')
+        except Exception as e:
+            print(f"DEBUG: Exception in individual action: {e}")
+            db.session.rollback()
+            flash('An error occurred while processing the request.', 'danger')
 
         return redirect(url_for('admin_user_interest_requests'))
 
