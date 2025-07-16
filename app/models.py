@@ -65,10 +65,35 @@ class User(UserMixin, db.Model):
     
     def get_progress_stats(self):
         """Get user's learning progress statistics"""
-        total_lessons = db.session.query(Lesson).join(Course).join(CourseInterest).join(UserInterest).filter(
-            UserInterest.user_id == self.id,
-            UserInterest.access_granted == True
-        ).count()
+        # Get user's approved interests
+        user_interests = UserInterest.query.filter_by(
+            user_id=self.id,
+            access_granted=True
+        ).all()
+        
+        if not user_interests:
+            return {
+                'total_lessons': 0,
+                'completed_lessons': 0,
+                'in_progress_lessons': 0,
+                'completion_percentage': 0
+            }
+        
+        # Get interest IDs
+        interest_ids = [ui.interest_id for ui in user_interests]
+        
+        # Get courses for these interests
+        course_interests = CourseInterest.query.filter(
+            CourseInterest.interest_id.in_(interest_ids)
+        ).all()
+        
+        if not course_interests:
+            total_lessons = 0
+        else:
+            course_ids = [ci.course_id for ci in course_interests]
+            total_lessons = Lesson.query.filter(
+                Lesson.course_id.in_(course_ids)
+            ).count()
         
         completed_lessons = self.lesson_progress.filter(
             UserLessonProgress.status == 'completed'
