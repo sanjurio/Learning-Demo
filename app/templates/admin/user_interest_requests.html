@@ -19,6 +19,32 @@
             <li><a href="{{ url_for('admin_user_interest_requests') }}" class="active">Interest Requests</a></li>
         </ul>
     </div>
+
+    <div class="admin-stats">
+        <div class="stat-card">
+            <div class="stat-label">Pending Users</div>
+            <div class="stat-value">{{ pending_users_count }}</div>
+            <a href="{{ url_for('admin_pending_users') }}" class="btn btn-primary">Manage</a>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value">{{ users_count }}</div>
+            <a href="{{ url_for('admin_users') }}" class="btn btn-primary">Manage</a>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Courses</div>
+            <div class="stat-value">{{ courses_count }}</div>
+            <a href="{{ url_for('admin_courses') }}" class="btn btn-primary">Manage</a>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Interests</div>
+            <div class="stat-value">{{ interests_count }}</div>
+            <a href="{{ url_for('admin_interests') }}" class="btn btn-primary">Manage</a>
+        </div>
+    </div>
     
     <div class="admin-container">
         <div class="card">

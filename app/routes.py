@@ -83,11 +83,20 @@ def register_routes(app):
 
         pending_users = get_pending_users()
         form = UserApprovalForm()
+        
+        # Get stats for dashboard cards
+        stats = {
+            'pending_users_count': User.query.filter_by(is_approved=False, is_admin=False).count(),
+            'users_count': User.query.filter_by(is_admin=False).count(),
+            'courses_count': Course.query.count(),
+            'interests_count': Interest.query.count()
+        }
 
         return render_template('admin/approve_users.html',
                                title='Pending Users',
                                pending_users=pending_users,
-                               form=form)
+                               form=form,
+                               **stats)
 
     @app.route('/admin/users/approve', methods=['POST'])
     @login_required
@@ -132,9 +141,19 @@ def register_routes(app):
             return redirect(url_for('index'))
 
         courses = Course.query.all()
+        
+        # Get stats for dashboard cards
+        stats = {
+            'pending_users_count': User.query.filter_by(is_approved=False, is_admin=False).count(),
+            'users_count': User.query.filter_by(is_admin=False).count(),
+            'courses_count': Course.query.count(),
+            'interests_count': Interest.query.count()
+        }
+        
         return render_template('admin/content.html',
                                title='Manage Courses',
-                               courses=courses)
+                               courses=courses,
+                               **stats)
 
     @app.route('/admin/dashboard')
     @login_required
@@ -207,9 +226,19 @@ def register_routes(app):
             return redirect(url_for('index'))
 
         users = User.query.filter_by(is_admin=False).all()
+        
+        # Get stats for dashboard cards
+        stats = {
+            'pending_users_count': User.query.filter_by(is_approved=False, is_admin=False).count(),
+            'users_count': User.query.filter_by(is_admin=False).count(),
+            'courses_count': Course.query.count(),
+            'interests_count': Interest.query.count()
+        }
+        
         return render_template('admin/users.html',
                                title='Manage Users',
-                               users=users)
+                               users=users,
+                               **stats)
 
     @app.route('/admin/interests')
     @login_required
@@ -219,9 +248,19 @@ def register_routes(app):
             return redirect(url_for('index'))
 
         interests = Interest.query.all()
+        
+        # Get stats for dashboard cards
+        stats = {
+            'pending_users_count': User.query.filter_by(is_approved=False, is_admin=False).count(),
+            'users_count': User.query.filter_by(is_admin=False).count(),
+            'courses_count': Course.query.count(),
+            'interests_count': Interest.query.count()
+        }
+        
         return render_template('admin/interests.html',
                                title='Manage Interests',
-                               interests=interests)
+                               interests=interests,
+                               **stats)
 
     @app.route('/register', methods=['GET', 'POST'])
     def register():
@@ -787,9 +826,18 @@ def register_routes(app):
                 'user_interest': ui
             })
 
+        # Get stats for dashboard cards
+        stats = {
+            'pending_users_count': User.query.filter_by(is_approved=False, is_admin=False).count(),
+            'users_count': User.query.filter_by(is_admin=False).count(),
+            'courses_count': Course.query.count(),
+            'interests_count': Interest.query.count()
+        }
+
         return render_template('admin/user_interest_requests.html',
                                title='User Interest Requests',
-                               pending_requests=pending_list)
+                               pending_requests=pending_list,
+                               **stats)
 
     @app.route('/admin/approve-interest-request', methods=['POST'])
     @login_required

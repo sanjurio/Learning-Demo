@@ -7,7 +7,7 @@
 {% block content %}
 <div class="section">
     <h1 class="section-title">Manage Courses</h1>
-    
+
     <div class="admin-nav">
         <ul>
             <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
@@ -15,9 +15,36 @@
             <li><a href="{{ url_for('admin_pending_users') }}">Pending Users</a></li>
             <li><a href="{{ url_for('admin_courses') }}" class="active">Courses</a></li>
             <li><a href="{{ url_for('admin_interests') }}">Interests</a></li>
+            <li><a href="{{ url_for('admin_user_interest_requests') }}">Interest Requests</a></li>
         </ul>
     </div>
-    
+
+    <div class="admin-stats">
+        <div class="stat-card">
+            <div class="stat-label">Pending Users</div>
+            <div class="stat-value">{{ pending_users_count }}</div>
+            <a href="{{ url_for('admin_pending_users') }}" class="btn btn-primary">Manage</a>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value">{{ users_count }}</div>
+            <a href="{{ url_for('admin_users') }}" class="btn btn-primary">Manage</a>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Courses</div>
+            <div class="stat-value">{{ courses_count }}</div>
+            <a href="{{ url_for('admin_courses') }}" class="btn btn-primary">Manage</a>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Interests</div>
+            <div class="stat-value">{{ interests_count }}</div>
+            <a href="{{ url_for('admin_interests') }}" class="btn btn-primary">Manage</a>
+        </div>
+    </div>
+
     <div class="admin-container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="admin-section-title">All Courses</h2>
@@ -25,7 +52,7 @@
                 <i class="fas fa-plus"></i> Add New Course
             </a>
         </div>
-        
+
         {% if not courses %}
         <div class="alert alert-info">
             <p>No courses have been created yet. Click the "Add New Course" button to create your first course.</p>
@@ -48,7 +75,7 @@
                         </button>
                     </form>
                 </div>
-                
+
                 {% if course.cover_image_url %}
                 <img src="{{ course.cover_image_url }}" alt="{{ course.title }}" class="course-image">
                 {% else %}
@@ -56,17 +83,17 @@
                     <i class="fas fa-book fa-3x" style="color: #ddd;"></i>
                 </div>
                 {% endif %}
-                
+
                 <div class="card-body">
                     <h3 class="course-title">{{ course.title }}</h3>
                     <p class="course-description">{{ course.description|truncate(100) }}</p>
-                    
+
                     <div class="mt-2">
                         {% for interest in course.interests %}
                         <span class="badge badge-primary">{{ interest.name }}</span>
                         {% endfor %}
                     </div>
-                    
+
                     <div class="d-flex justify-content-between align-items-center mt-3">
                         <small class="text-muted">
                             <i class="fas fa-calendar-alt"></i> {{ course.updated_at.strftime('%d %b, %Y') }}
