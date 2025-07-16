@@ -18,7 +18,61 @@
             <hr>
             
             <div class="lesson-content">
-                {{ lesson.content|safe }}
+                {% if not lesson.content or lesson.content.strip() == '' %}
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> No content available</h5>
+                    <p>This lesson doesn't have any content added yet. Please check back later or contact an administrator.</p>
+                </div>
+                {% else %}
+                    {% if lesson.content_type == 'text' %}
+                        {% if can_view_content %}
+                            {{ lesson.content|safe }}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-lock"></i> Access Restricted</h5>
+                                <p>You don't have permission to view text content. Please contact an administrator for access.</p>
+                            </div>
+                        {% endif %}
+                    {% elif lesson.content_type == 'video' %}
+                        {% if can_view_content %}
+                            {% if lesson.video_url %}
+                                <div class="embed-responsive embed-responsive-16by9 mb-3">
+                                    <iframe class="embed-responsive-item" src="{{ lesson.video_url }}" allowfullscreen></iframe>
+                                </div>
+                            {% endif %}
+                            {{ lesson.content|safe }}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-lock"></i> Video Access Restricted</h5>
+                                <p>You don't have permission to view video content. This feature is available for THBS users only.</p>
+                            </div>
+                        {% endif %}
+                    {% elif lesson.content_type == 'mixed' %}
+                        {% if can_view_content.text %}
+                            {{ lesson.content|safe }}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-lock"></i> Text Access Restricted</h5>
+                                <p>You don't have permission to view text content.</p>
+                            </div>
+                        {% endif %}
+                        
+                        {% if lesson.video_url %}
+                            {% if can_view_content.video %}
+                                <div class="embed-responsive embed-responsive-16by9 mt-3">
+                                    <iframe class="embed-responsive-item" src="{{ lesson.video_url }}" allowfullscreen></iframe>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning mt-3">
+                                    <h5><i class="fas fa-lock"></i> Video Access Restricted</h5>
+                                    <p>You don't have permission to view video content. This feature is available for THBS users only.</p>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        {{ lesson.content|safe }}
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>

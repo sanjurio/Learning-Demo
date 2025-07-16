@@ -172,11 +172,19 @@ def register_routes(app):
 
         available_courses = []
         if approved_interest_ids:
-            available_courses = db.session.query(Course)\
-                .join(CourseInterest, Course.id == CourseInterest.course_id)\
-                .filter(CourseInterest.interest_id.in_(approved_interest_ids))\
-                .distinct()\
-                .all()
+            # Get Fun interest ID
+            fun_interest = Interest.query.filter_by(name='Fun').first()
+            
+            # Filter out Fun courses for BT users
+            if current_user.email_domain == 'bt.com' and fun_interest:
+                approved_interest_ids = [id for id in approved_interest_ids if id != fun_interest.id]
+            
+            if approved_interest_ids:
+                available_courses = db.session.query(Course)\
+                    .join(CourseInterest, Course.id == CourseInterest.course_id)\
+                    .filter(CourseInterest.interest_id.in_(approved_interest_ids))\
+                    .distinct()\
+                    .all()
 
         return render_template('user/dashboard.html',
                                title='Dashboard',
@@ -328,6 +336,11 @@ def register_routes(app):
 
         form = InterestSelectionForm()
         all_interests = Interest.query.all()
+        
+        # Filter out Fun interest for BT users
+        if current_user.email_domain == 'bt.com':
+            all_interests = [i for i in all_interests if i.name != 'Fun']
+        
         form.interests.choices = [(i.id, i.name) for i in all_interests]
 
         if form.validate_on_submit():
@@ -386,9 +399,27 @@ def register_routes(app):
             flash('You do not have access to this lesson.', 'danger')
             return redirect(url_for('user_dashboard'))
 
+        # Get previous and next lessons for navigation
+        prev_lesson = Lesson.query.filter(
+            Lesson.course_id == lesson.course_id,
+            Lesson.order < lesson.order
+        ).order_by(Lesson.order.desc()).first()
+
+        next_lesson = Lesson.query.filter(
+            Lesson.course_id == lesson.course_id,
+            Lesson.order > lesson.order
+        ).order_by(Lesson.order.asc()).first()
+
+        # Check if user can view content based on access level
+        can_view_content = lesson.can_view_content(current_user)
+
         return render_template('user/lesson.html',
                                title=lesson.title,
-                               lesson=lesson)
+                               lesson=lesson,
+                               course=lesson.course,
+                               prev_lesson=prev_lesson,
+                               next_lesson=next_lesson,
+                               can_view_content=can_view_content)
 
     # Admin routes for managing interests
     @app.route('/admin/interests/add', methods=['GET', 'POST'])

@@ -45,7 +45,9 @@
     
     {% if not lessons %}
     <div class="alert alert-info">
-        <p>This course doesn't have any lessons yet. Check back later.</p>
+        <h5><i class="fas fa-info-circle"></i> No content available</h5>
+        <p>This course doesn't have any lessons added yet. Please check back later or contact an administrator.</p>
+        <p><small class="text-muted">Course created: {{ course.created_at.strftime('%d %b, %Y') }}</small></p>
     </div>
     {% else %}
     <div class="card">

@@ -9,7 +9,8 @@ def create_interests(admin_id):
         'OTP (Open Telecom Platform)': 'Erlang/OTP framework for building fault-tolerant applications',
         'Concurrent Programming': 'Actor model and lightweight process management in Erlang',
         'Distributed Systems': 'Building distributed and fault-tolerant systems with Erlang',
-        'Telecom Systems': 'Telecommunications and real-time systems development'
+        'Telecom Systems': 'Telecommunications and real-time systems development',
+        'Fun': 'Fun activities and video content - THBS users only'
     }
 
     created_interests = {}
@@ -57,6 +58,7 @@ def create_sample_courses():
         concurrent_interest = interests.get('Concurrent Programming')
         distributed_interest = interests.get('Distributed Systems')
         telecom_interest = interests.get('Telecom Systems')
+        fun_interest = interests.get('Fun')
 
         print(f"Found required interests: Erlang, OTP, Concurrent Programming")
 
@@ -108,16 +110,35 @@ def create_sample_courses():
             },
             {
                 'title': 'Telecom Systems Development',
-                'description': 'Apply Erlang to real-world telecommunications scenarios. Learn how to build high-availability systems for telecom infrastructure, protocol implementations, and real-time communication systems.',
+                'description': 'Learn how to build telecom applications using Erlang',
                 'cover_image_url': 'https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
-                'interests': [telecom_interest, distributed_interest],
+                'interests': [telecom_interest],
                 'lessons': [
                     {'title': 'Protocol Implementation', 'content': 'Learn how to implement network protocols in Erlang using gen_tcp and gen_udp. Understand binary pattern matching for parsing protocol messages, state machines for protocol handling, and how to build robust protocol stacks. Implement a simple HTTP server and client from scratch.', 'order': 1},
                     {'title': 'Real-time Systems', 'content': 'Discover how to build real-time systems with guaranteed response times using Erlang. Learn about soft real-time vs hard real-time requirements, how to measure and optimize latency, and techniques for handling high-throughput message processing. Build a real-time messaging system.', 'order': 2},
                     {'title': 'High Availability Architecture', 'content': 'Learn how to design systems with 99.999% uptime using Erlang/OTP principles. Understand hot code loading, graceful upgrades, redundancy patterns, and failover mechanisms. Study real-world case studies from telecom companies and implement a highly available service that can be upgraded without downtime.', 'order': 3}
                 ]
+            },
+            {
+                'title': 'Fun Programming Adventures',
+                'description': 'Entertaining programming content with videos and interactive examples',
+                'cover_image_url': 'https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
+                'interests': [fun_interest],
+                'lessons': [
+                    {'title': 'Programming Games with Erlang', 'content': '''<h3>Fun with Erlang Games</h3>
+                            <p>Let's explore how to create simple games using Erlang!</p>
+                            <p>This lesson includes interactive examples and video demonstrations.</p>''', 'order': 1, 'content_type': 'video', 'video_url': 'https://www.youtube.com/embed/dQw4w9WgXcQ'},
+                    {'title': 'Creative Coding Challenges', 'content': '''<h3>Coding Challenges</h3>
+                            <p>Solve fun programming puzzles and challenges!</p>''', 'order': 2, 'content_type': 'mixed', 'video_url': 'https://www.youtube.com/embed/dQw4w9WgXcQ'}
+                ]
             }
         ]
+
+        if erlang_fundamentals and otp_interest and concurrent_interest and distributed_interest and telecom_interest and fun_interest:
+            print("All interests found. Proceeding to create courses.")
+        else:
+            print("Not all required interests were found. Skipping course creation.")
+            return
 
         for course_data in courses:
             # Check if course already exists
@@ -151,7 +172,9 @@ def create_sample_courses():
                     title=lesson_data['title'],
                     content=lesson_data['content'],
                     course_id=course.id,
-                    order=lesson_data['order']
+                    order=lesson_data['order'],
+                    content_type=lesson_data.get('content_type', 'text'),
+                    video_url=lesson_data.get('video_url')
                 )
                 db.session.add(lesson)
 
