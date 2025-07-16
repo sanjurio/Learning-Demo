@@ -540,3 +540,171 @@ def register_routes(app):
         db.session.commit()
         flash('Course deleted successfully!', 'success')
         return redirect(url_for('admin_courses'))
+
+    # Admin lesson management routes
+    @app.route('/admin/courses/<int:course_id>/lessons')
+    @login_required
+    def admin_lessons(course_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        course = Course.query.get_or_404(course_id)
+        lessons = Lesson.query.filter_by(course_id=course_id).order_by(Lesson.order).all()
+        
+        return render_template('admin/lessons.html',
+                               title=f'Manage Lessons for {course.title}',
+                               course=course,
+                               lessons=lessons)
+
+    @app.route('/admin/courses/<int:course_id>/lessons/add', methods=['GET', 'POST'])
+    @login_required
+    def admin_add_lesson(course_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        course = Course.query.get_or_404(course_id)
+        form = LessonForm()
+
+        if form.validate_on_submit():
+            lesson = Lesson(
+                title=form.title.data,
+                content=form.content.data,
+                content_type=form.content_type.data,
+                video_url=form.video_url.data,
+                order=form.order.data,
+                course_id=course_id,
+                created_by=current_user.id
+            )
+            db.session.add(lesson)
+            db.session.commit()
+            flash('Lesson created successfully!', 'success')
+            return redirect(url_for('admin_lessons', course_id=course_id))
+
+        return render_template('admin/edit_lesson.html', title='Add Lesson', form=form, course=course)
+
+    @app.route('/admin/lessons/<int:lesson_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    def admin_edit_lesson(lesson_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        lesson = Lesson.query.get_or_404(lesson_id)
+        form = LessonForm()
+
+        if form.validate_on_submit():
+            lesson.title = form.title.data
+            lesson.content = form.content.data
+            lesson.content_type = form.content_type.data
+            lesson.video_url = form.video_url.data
+            lesson.order = form.order.data
+            db.session.commit()
+            flash('Lesson updated successfully!', 'success')
+            return redirect(url_for('admin_lessons', course_id=lesson.course_id))
+
+        # Pre-populate form
+        form.title.data = lesson.title
+        form.content.data = lesson.content
+        form.content_type.data = lesson.content_type
+        form.video_url.data = lesson.video_url
+        form.order.data = lesson.order
+
+        return render_template('admin/edit_lesson.html', title='Edit Lesson', form=form, lesson=lesson, course=lesson.course)
+
+    @app.route('/admin/lessons/<int:lesson_id>/delete', methods=['POST'])
+    @login_required
+    def admin_delete_lesson(lesson_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        lesson = Lesson.query.get_or_404(lesson_id)
+        course_id = lesson.course_id
+        db.session.delete(lesson)
+        db.session.commit()
+        flash('Lesson deleted successfully!', 'success')
+        return redirect(url_for('admin_lessons', course_id=course_id))
+
+    # Forum routes
+    @app.route('/forum/new', methods=['GET', 'POST'])
+    @login_required
+    def forum_new_topic():
+        form = ForumTopicForm()
+
+        if form.validate_on_submit():
+            topic = ForumTopic(
+                title=form.title.data,
+                content=form.content.data,
+                course_id=form.course_id.data if form.course_id.data else None,
+                user_id=current_user.id
+            )
+            db.session.add(topic)
+            db.session.commit()
+            flash('Topic created successfully!', 'success')
+            
+            if topic.course_id:
+                return redirect(url_for('course_forum', course_id=topic.course_id))
+            else:
+                return redirect(url_for('forum_index'))
+
+        return render_template('forum/new_topic.html', title='New Topic', form=form)
+
+    @app.route('/forum/topic/<int:topic_id>')
+    @login_required
+    def forum_topic(topic_id):
+        topic = ForumTopic.query.get_or_404(topic_id)
+        replies = ForumReply.query.filter_by(topic_id=topic_id).order_by(ForumReply.created_at).all()
+        form = ForumReplyForm()
+
+        return render_template('forum/topic.html',
+                               title=topic.title,
+                               topic=topic,
+                               replies=replies,
+                               form=form)
+
+    @app.route('/forum/topic/<int:topic_id>/reply', methods=['POST'])
+    @login_required
+    def forum_reply(topic_id):
+        topic = ForumTopic.query.get_or_404(topic_id)
+        form = ForumReplyForm()
+
+        if form.validate_on_submit():
+            reply = ForumReply(
+                content=form.content.data,
+                topic_id=topic_id,
+                user_id=current_user.id
+            )
+            db.session.add(reply)
+            db.session.commit()
+            flash('Reply posted successfully!', 'success')
+
+        return redirect(url_for('forum_topic', topic_id=topic_id))
+
+    @app.route('/courses/<int:course_id>/forum')
+    @login_required
+    def course_forum(course_id):
+        course = Course.query.get_or_404(course_id)
+        
+        if not user_can_access_course(current_user, course):
+            flash('You do not have access to this course forum.', 'danger')
+            return redirect(url_for('user_dashboard'))
+
+        topics = ForumTopic.query.filter_by(course_id=course_id).order_by(ForumTopic.created_at.desc()).all()
+        
+        return render_template('forum/course_forum.html',
+                               title=f'{course.title} Forum',
+                               course=course,
+                               topics=topics)
+
+    # API Keys management
+    @app.route('/admin/api-keys', methods=['GET', 'POST'])
+    @login_required
+    def admin_api_keys():
+        if not current_user.is_admin:
+            abort(403)
+
+        form = ApiKeyForm()
+        if form.validate_on_submit():
+            # In a real app, you'd save this securely
+            flash('API key saved successfully!', 'success')
+            return redirect(url_for('admin_api_keys'))
+
+        return render_template('admin/api_keys.html', title='API Keys', form=form)
