@@ -97,7 +97,7 @@
                                             <input type="hidden" name="user_id" value="{{ request.user.id }}" />
                                             <input type="hidden" name="interest_id" value="{{ request.interest.id }}" />
                                             <input type="hidden" name="action" value="approve" />
-                                            <button type="submit" class="btn btn-success btn-sm">
+                                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to approve this interest request?')">
                                                 <i class="fas fa-check"></i> Approve
                                             </button>
                                         </form>
@@ -106,7 +106,7 @@
                                             <input type="hidden" name="user_id" value="{{ request.user.id }}" />
                                             <input type="hidden" name="interest_id" value="{{ request.interest.id }}" />
                                             <input type="hidden" name="action" value="reject" />
-                                            <button type="submit" class="btn btn-danger btn-sm">
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to reject this interest request?')">
                                                 <i class="fas fa-times"></i> Reject
                                             </button>
                                         </form>
