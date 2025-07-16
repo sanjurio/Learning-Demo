@@ -421,3 +421,54 @@ input:checked + .slider:before {
     white-space: nowrap;
   }
 }
+
+
+
+/* Bulk Actions Styling */
+.bulk-actions {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+.bulk-actions .btn {
+    margin-right: 10px;
+    margin-bottom: 5px;
+}
+
+/* Checkbox styling */
+.request-checkbox, #masterCheckbox {
+    transform: scale(1.2);
+    margin-right: 5px;
+}
+
+/* Fix text visibility */
+.form-check-label {
+    color: #333 !important;
+    font-weight: 500;
+}
+
+.text-dark {
+    color: #333 !important;
+}
+
+/* Responsive bulk actions */
+@media (max-width: 768px) {
+    .bulk-actions {
+        text-align: center;
+    }
+    
+    .bulk-actions .btn {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
+    }
+}
+
+/* Table checkbox alignment */
+.user-table td:first-child,
+.user-table th:first-child {
+    text-align: center;
+    width: 40px;
+}

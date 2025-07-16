@@ -45,28 +45,33 @@
                 </div>
                 <div class="card-body">
                     {% if user_interests %}
-                    <div class="list-group">
+                    <div class="interest-status-list">
                         {% for interest in user_interests %}
                         {% if interest.selected %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h5 class="mb-1">{{ interest.interest.name }}</h5>
+                        <div class="interest-status-item">
+                            <div class="interest-info">
+                                <h5 class="interest-name">{{ interest.interest.name }}</h5>
+                                <p class="interest-description">{{ interest.interest.description }}</p>
+                            </div>
+                            <div class="status-badge">
                                 {% if interest.access_granted %}
-                                <span class="badge badge-success">Access Granted</span>
+                                <span class="badge badge-success"><i class="fas fa-check"></i> Access Granted</span>
                                 {% else %}
-                                <span class="badge badge-warning">Pending</span>
+                                <span class="badge badge-warning"><i class="fas fa-clock"></i> Pending Approval</span>
                                 {% endif %}
                             </div>
-                            <p class="mb-1">{{ interest.interest.description }}</p>
                         </div>
                         {% endif %}
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p>You haven't selected any interests yet.</p>
+                    <div class="no-interests">
+                        <i class="fas fa-info-circle"></i>
+                        <p>You haven't selected any interests yet. Select interests on the left to see their status here.</p>
+                    </div>
                     {% endif %}
                 </div>
-            </div>
+            </div></div>
         </div>
     </div>
 </div>

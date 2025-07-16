@@ -425,3 +425,83 @@ footer a.text-white:hover {
   padding: 1rem 1.25rem;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
 }
+
+
+
+/* Interest Status Styling */
+.interest-status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.interest-status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: box-shadow 0.2s ease;
+}
+
+.interest-status-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.interest-info {
+    flex: 1;
+}
+
+.interest-name {
+    margin: 0 0 5px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.interest-description {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    flex-shrink: 0;
+    margin-left: 15px;
+}
+
+.status-badge .badge {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    border-radius: 20px;
+}
+
+.status-badge .badge i {
+    margin-right: 5px;
+}
+
+.no-interests {
+    text-align: center;
+    padding: 30px;
+    color: #666;
+}
+
+.no-interests i {
+    font-size: 2rem;
+    color: #17a2b8;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+    .interest-status-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .status-badge {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+}

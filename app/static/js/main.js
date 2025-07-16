@@ -157,3 +157,88 @@ if(analyzeButton) {
 }
 
 });
+
+
+// Bulk Interest Request Management
+document.addEventListener('DOMContentLoaded', function() {
+    const masterCheckbox = document.getElementById('masterCheckbox');
+    const requestCheckboxes = document.querySelectorAll('.request-checkbox');
+    const selectAllBtn = document.getElementById('selectAll');
+    const deselectAllBtn = document.getElementById('deselectAll');
+    const bulkApproveBtn = document.getElementById('bulkApprove');
+    const bulkRejectBtn = document.getElementById('bulkReject');
+    const bulkActionForm = document.getElementById('bulkActionForm');
+    const bulkActionInput = document.getElementById('bulkActionInput');
+
+    if (masterCheckbox && requestCheckboxes.length > 0) {
+        // Master checkbox functionality
+        masterCheckbox.addEventListener('change', function() {
+            requestCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+
+        // Update master checkbox when individual checkboxes change
+        requestCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const checkedCount = document.querySelectorAll('.request-checkbox:checked').length;
+                masterCheckbox.checked = checkedCount === requestCheckboxes.length;
+                masterCheckbox.indeterminate = checkedCount > 0 && checkedCount < requestCheckboxes.length;
+            });
+        });
+
+        // Select all button
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', function() {
+                requestCheckboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+                masterCheckbox.checked = true;
+                masterCheckbox.indeterminate = false;
+            });
+        }
+
+        // Deselect all button
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('click', function() {
+                requestCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                masterCheckbox.checked = false;
+                masterCheckbox.indeterminate = false;
+            });
+        }
+
+        // Bulk approve button
+        if (bulkApproveBtn && bulkActionForm) {
+            bulkApproveBtn.addEventListener('click', function() {
+                const checkedBoxes = document.querySelectorAll('.request-checkbox:checked');
+                if (checkedBoxes.length === 0) {
+                    alert('Please select at least one request to approve.');
+                    return;
+                }
+                
+                if (confirm(`Are you sure you want to approve ${checkedBoxes.length} selected request(s)?`)) {
+                    bulkActionInput.value = 'approve';
+                    bulkActionForm.submit();
+                }
+            });
+        }
+
+        // Bulk reject button
+        if (bulkRejectBtn && bulkActionForm) {
+            bulkRejectBtn.addEventListener('click', function() {
+                const checkedBoxes = document.querySelectorAll('.request-checkbox:checked');
+                if (checkedBoxes.length === 0) {
+                    alert('Please select at least one request to reject.');
+                    return;
+                }
+                
+                if (confirm(`Are you sure you want to reject ${checkedBoxes.length} selected request(s)?`)) {
+                    bulkActionInput.value = 'reject';
+                    bulkActionForm.submit();
+                }
+            });
+        }
+    }
+});

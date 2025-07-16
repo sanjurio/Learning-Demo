@@ -175,9 +175,10 @@ def register_routes(app):
             # Get Fun interest ID
             fun_interest = Interest.query.filter_by(name='Fun').first()
             
-            # Filter out Fun courses for BT users
+            # Filter out Fun courses for BT users only
             if current_user.email_domain == 'bt.com' and fun_interest:
                 approved_interest_ids = [id for id in approved_interest_ids if id != fun_interest.id]
+            # THBS users can access Fun courses - no filtering needed
             
             if approved_interest_ids:
                 available_courses = db.session.query(Course)\
@@ -334,7 +335,7 @@ def register_routes(app):
         form = InterestSelectionForm()
         all_interests = Interest.query.all()
         
-        # Filter out Fun interest for BT users
+        # Filter out Fun interest for BT users only, THBS users can see it
         if current_user.email_domain == 'bt.com':
             all_interests = [i for i in all_interests if i.name != 'Fun']
         
@@ -832,5 +833,64 @@ def register_routes(app):
                 flash('Invalid user or interest ID.', 'danger')
         else:
             flash('Missing required form data.', 'danger')
+
+        return redirect(url_for('admin_user_interest_requests'))
+
+    @app.route('/admin/bulk-interest-requests', methods=['POST'])
+    @login_required
+    def admin_bulk_interest_requests():
+        if not current_user.is_admin:
+            abort(403)
+
+        selected_requests = request.form.getlist('selected_requests')
+        bulk_action = request.form.get('bulk_action')
+
+        if not selected_requests or not bulk_action:
+            flash('No requests selected or invalid action.', 'danger')
+            return redirect(url_for('admin_user_interest_requests'))
+
+        success_count = 0
+        error_count = 0
+
+        for request_id in selected_requests:
+            try:
+                user_id, interest_id = request_id.split('-')
+                user_id = int(user_id)
+                interest_id = int(interest_id)
+
+                user_interest = UserInterest.query.filter_by(
+                    user_id=user_id,
+                    interest_id=interest_id
+                ).first()
+
+                if bulk_action == 'approve':
+                    if user_interest:
+                        user_interest.access_granted = True
+                        user_interest.granted_at = datetime.utcnow()
+                        user_interest.granted_by = current_user.id
+                        success_count += 1
+                    else:
+                        error_count += 1
+                elif bulk_action == 'reject':
+                    if user_interest:
+                        db.session.delete(user_interest)
+                        success_count += 1
+                    else:
+                        error_count += 1
+            except (ValueError, AttributeError):
+                error_count += 1
+
+        try:
+            db.session.commit()
+            if bulk_action == 'approve':
+                flash(f'Successfully approved {success_count} interest request(s).', 'success')
+            else:
+                flash(f'Successfully rejected {success_count} interest request(s).', 'success')
+            
+            if error_count > 0:
+                flash(f'{error_count} request(s) could not be processed.', 'warning')
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while processing bulk action.', 'danger')
 
         return redirect(url_for('admin_user_interest_requests'))

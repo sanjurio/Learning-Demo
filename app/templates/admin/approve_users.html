@@ -7,7 +7,7 @@
 {% block content %}
 <div class="section">
     <h1 class="section-title">Pending User Approvals</h1>
-    
+
     <div class="admin-nav">
         <ul>
             <li><a href="{{ url_for('admin_dashboard') }}">Dashboard</a></li>
@@ -17,10 +17,10 @@
             <li><a href="{{ url_for('admin_interests') }}">Interests</a></li>
         </ul>
     </div>
-    
+
     <div class="admin-container">
         <h2 class="admin-section-title">Users Awaiting Approval</h2>
-        
+
         {% if not pending_users %}
         <div class="alert alert-info">
             <p>There are no pending user registrations that require approval.</p>
@@ -36,13 +36,13 @@
                     <div class="user-access">Default Access: {{ user.access_level or 'basic' }}</div>
                     <div class="user-registered">Registered on {{ user.created_at.strftime('%d %b, %Y at %H:%M') }}</div>
                 </div>
-                
+
                 <div class="approval-actions">
                     <form method="post" action="{{ url_for('admin_approve_user') }}" class="approval-form">
                         <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}" />
                         <input type="hidden" name="user_id" value="{{ user.id }}" />
                         <input type="hidden" name="action" value="approve" />
-                        
+
                         <div class="video-access-control">
                             <label for="video_access_{{ user.id }}">Video Access:</label>
                             <select name="video_access" id="video_access_{{ user.id }}" class="form-control">
@@ -50,12 +50,12 @@
                                 <option value="on" {% if user.access_level == 'full_access' %}selected{% endif %}>Video + Text</option>
                             </select>
                         </div>
-                        
+
                         <button type="submit" class="btn btn-success">
                             <i class="fas fa-check"></i> Approve
                         </button>
                     </form>
-                    
+
                     <form method="post" action="{{ url_for('admin_approve_user') }}">
                         <input type="hidden" name="csrf_token" value="{{ form.csrf_token._value() }}" />
                         <input type="hidden" name="user_id" value="{{ user.id }}" />
