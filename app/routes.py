@@ -305,18 +305,32 @@ def register_routes(app):
         
         return render_template('user/profile.html', title='Profile', form=form)
 
-    @app.route('/user/interests')
+    @app.route('/user/interests', methods=['GET', 'POST'])
     @login_required
     def user_interests():
         if not current_user.is_approved:
             flash('Your account is pending approval.', 'warning')
             return redirect(url_for('logout'))
 
+        form = InterestSelectionForm()
         all_interests = Interest.query.all()
+        form.interests.choices = [(i.id, i.name) for i in all_interests]
+        
+        if form.validate_on_submit():
+            # Handle form submission - update user interest selections
+            # This would typically update which interests the user has selected
+            # (not granted access, just expressed interest in)
+            flash('Your interest selections have been updated and are pending admin approval.', 'success')
+            return redirect(url_for('user_interests'))
+        
+        # Pre-populate form with current selections
         user_interests_status = get_user_interests_status(current_user.id)
+        current_selections = [ui['interest'].id for ui in user_interests_status if ui.get('selected', False)]
+        form.interests.data = current_selections
         
         return render_template('user/interests.html',
                                title='My Interests',
+                               form=form,
                                interests=all_interests,
                                user_interests=user_interests_status)
 

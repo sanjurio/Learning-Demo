@@ -44,9 +44,9 @@
                     <h3>Interest Access Status</h3>
                 </div>
                 <div class="card-body">
-                    {% if interest_status %}
+                    {% if user_interests %}
                     <div class="list-group">
-                        {% for interest in interest_status %}
+                        {% for interest in user_interests %}
                         {% if interest.selected %}
                         <div class="list-group-item">
                             <div class="d-flex w-100 justify-content-between">
