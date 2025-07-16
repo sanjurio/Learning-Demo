@@ -6,7 +6,7 @@ import io
 from . import db
 from .models import (User, Course, Lesson, Interest, UserInterest,
                     CourseInterest, UserCourse, ForumTopic, ForumReply,
-                    UserLessonProgress)
+                    UserLessonProgress, UserNote, UserBookmark, UserActivity)
 from .forms import (LoginForm, RegistrationForm, TwoFactorForm,
                    SetupTwoFactorForm, InterestSelectionForm, UserApprovalForm,
                    CourseForm, LessonForm, InterestForm,
@@ -206,10 +206,30 @@ def register_routes(app):
                     .distinct()\
                     .all()
 
+        # Get user's progress statistics
+        progress_stats = current_user.get_progress_stats()
+
+        # Get user's recent activities
+        recent_activities = current_user.get_recent_activity()
+
+        # Get user's bookmarked lessons
+        bookmarked_lessons = current_user.get_bookmarked_lessons()
+
+        # Get current lesson (in progress)
+        current_lesson = current_user.get_current_lesson()
+
+        # Get recommended courses
+        recommended_courses = get_recommended_courses(current_user)
+
         return render_template('user/dashboard.html',
                                title='Dashboard',
                                courses=available_courses,
-                               user_interests=user_interests)
+                               user_interests=user_interests,
+                               progress_stats=progress_stats,
+                               recent_activities=recent_activities,
+                               bookmarked_lessons=bookmarked_lessons,
+                               current_lesson=current_lesson,
+                               recommended_courses=recommended_courses)
 
     @app.route('/logout')
     @login_required
@@ -449,6 +469,18 @@ def register_routes(app):
 
         # Check if user can view content based on access level
         can_view_content = lesson.can_view_content(current_user)
+        
+        # Get user's lesson progress
+        lesson_progress = UserLessonProgress.query.filter_by(
+            user_id=current_user.id,
+            lesson_id=lesson.id
+        ).first()
+        
+        # Get user's notes for this lesson
+        user_notes = UserNote.query.filter_by(
+            user_id=current_user.id,
+            lesson_id=lesson.id
+        ).order_by(UserNote.created_at.desc()).all()
 
         return render_template('user/lesson.html',
                                title=lesson.title,
@@ -456,7 +488,9 @@ def register_routes(app):
                                course=lesson.course,
                                prev_lesson=prev_lesson,
                                next_lesson=next_lesson,
-                               can_view_content=can_view_content)
+                               can_view_content=can_view_content,
+                               lesson_progress=lesson_progress,
+                               user_notes=user_notes)
 
     # Admin routes for managing interests
     @app.route('/admin/interests/add', methods=['GET', 'POST'])
@@ -937,3 +971,210 @@ def register_routes(app):
             flash('No requests selected or invalid action.', 'warning')
 
         return redirect(url_for('admin_user_interest_requests'))
+    
+    # API endpoints for interactive learning features
+    @app.route('/api/toggle_bookmark/<int:lesson_id>', methods=['POST'])
+    @login_required
+    def api_toggle_bookmark(lesson_id):
+        lesson = Lesson.query.get_or_404(lesson_id)
+        
+        # Check if user has access to this lesson
+        if not user_can_access_course(current_user, lesson.course):
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # Check if bookmark exists
+        bookmark = UserBookmark.query.filter_by(
+            user_id=current_user.id,
+            lesson_id=lesson_id
+        ).first()
+        
+        if bookmark:
+            # Remove bookmark
+            db.session.delete(bookmark)
+            is_bookmarked = False
+            
+            # Log activity
+            activity = UserActivity(
+                user_id=current_user.id,
+                activity_type='bookmark_removed',
+                lesson_id=lesson_id,
+                course_id=lesson.course_id,
+                activity_data='{"lesson_title": "' + lesson.title + '"}'
+            )
+            db.session.add(activity)
+        else:
+            # Add bookmark
+            bookmark = UserBookmark(
+                user_id=current_user.id,
+                lesson_id=lesson_id
+            )
+            db.session.add(bookmark)
+            is_bookmarked = True
+            
+            # Log activity
+            activity = UserActivity(
+                user_id=current_user.id,
+                activity_type='bookmark_added',
+                lesson_id=lesson_id,
+                course_id=lesson.course_id,
+                activity_data='{"lesson_title": "' + lesson.title + '"}'
+            )
+            db.session.add(activity)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'is_bookmarked': is_bookmarked})
+    
+    @app.route('/api/check_bookmark/<int:lesson_id>')
+    @login_required
+    def api_check_bookmark(lesson_id):
+        lesson = Lesson.query.get_or_404(lesson_id)
+        
+        # Check if user has access to this lesson
+        if not user_can_access_course(current_user, lesson.course):
+            return jsonify({'error': 'Access denied'}), 403
+        
+        bookmark = UserBookmark.query.filter_by(
+            user_id=current_user.id,
+            lesson_id=lesson_id
+        ).first()
+        
+        return jsonify({'is_bookmarked': bookmark is not None})
+    
+    @app.route('/api/mark_lesson_complete/<int:lesson_id>', methods=['POST'])
+    @login_required
+    def api_mark_lesson_complete(lesson_id):
+        lesson = Lesson.query.get_or_404(lesson_id)
+        
+        # Check if user has access to this lesson
+        if not user_can_access_course(current_user, lesson.course):
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # Get or create progress record
+        progress = UserLessonProgress.query.filter_by(
+            user_id=current_user.id,
+            lesson_id=lesson_id
+        ).first()
+        
+        if not progress:
+            progress = UserLessonProgress(
+                user_id=current_user.id,
+                lesson_id=lesson_id,
+                status='completed',
+                started_at=datetime.utcnow(),
+                completed_at=datetime.utcnow()
+            )
+            db.session.add(progress)
+        else:
+            progress.status = 'completed'
+            progress.completed_at = datetime.utcnow()
+        
+        # Log activity
+        activity = UserActivity(
+            user_id=current_user.id,
+            activity_type='lesson_completed',
+            lesson_id=lesson_id,
+            course_id=lesson.course_id,
+            activity_data='{"lesson_title": "' + lesson.title + '"}'
+        )
+        db.session.add(activity)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'status': 'completed'})
+    
+    @app.route('/api/mark_lesson_progress/<int:lesson_id>', methods=['POST'])
+    @login_required
+    def api_mark_lesson_progress(lesson_id):
+        lesson = Lesson.query.get_or_404(lesson_id)
+        
+        # Check if user has access to this lesson
+        if not user_can_access_course(current_user, lesson.course):
+            return jsonify({'error': 'Access denied'}), 403
+        
+        data = request.get_json()
+        status = data.get('status', 'in_progress')
+        
+        # Get or create progress record
+        progress = UserLessonProgress.query.filter_by(
+            user_id=current_user.id,
+            lesson_id=lesson_id
+        ).first()
+        
+        if not progress:
+            progress = UserLessonProgress(
+                user_id=current_user.id,
+                lesson_id=lesson_id,
+                status=status,
+                started_at=datetime.utcnow() if status == 'in_progress' else None,
+                last_interaction=datetime.utcnow()
+            )
+            db.session.add(progress)
+            
+            # Log activity for first time starting
+            if status == 'in_progress':
+                activity = UserActivity(
+                    user_id=current_user.id,
+                    activity_type='lesson_started',
+                    lesson_id=lesson_id,
+                    course_id=lesson.course_id,
+                    activity_data='{"lesson_title": "' + lesson.title + '"}'
+                )
+                db.session.add(activity)
+        else:
+            # Only update if not already completed
+            if progress.status != 'completed':
+                progress.status = status
+                progress.last_interaction = datetime.utcnow()
+                if status == 'in_progress' and not progress.started_at:
+                    progress.started_at = datetime.utcnow()
+        
+        db.session.commit()
+        return jsonify({'success': True, 'status': progress.status})
+    
+    @app.route('/api/save_note/<int:lesson_id>', methods=['POST'])
+    @login_required
+    def api_save_note(lesson_id):
+        lesson = Lesson.query.get_or_404(lesson_id)
+        
+        # Check if user has access to this lesson
+        if not user_can_access_course(current_user, lesson.course):
+            return jsonify({'error': 'Access denied'}), 403
+        
+        data = request.get_json()
+        note_text = data.get('note_text', '').strip()
+        
+        if not note_text:
+            return jsonify({'error': 'Note text cannot be empty'}), 400
+        
+        # Create note
+        note = UserNote(
+            user_id=current_user.id,
+            lesson_id=lesson_id,
+            note_text=note_text
+        )
+        db.session.add(note)
+        
+        # Log activity
+        activity = UserActivity(
+            user_id=current_user.id,
+            activity_type='note_added',
+            lesson_id=lesson_id,
+            course_id=lesson.course_id,
+            activity_data='{"lesson_title": "' + lesson.title + '"}'
+        )
+        db.session.add(activity)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'note_id': note.id})
+    
+    @app.route('/api/delete_note/<int:note_id>', methods=['DELETE'])
+    @login_required
+    def api_delete_note(note_id):
+        note = UserNote.query.get_or_404(note_id)
+        
+        # Check if user owns this note
+        if note.user_id != current_user.id:
+            return jsonify({'error': 'Access denied'}), 403
+        
+        db.session.delete(note)
+        db.session.commit()
+        return jsonify({'success': True})

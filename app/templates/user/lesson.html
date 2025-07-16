@@ -12,8 +12,33 @@
     
     <div class="card mb-4">
         <div class="card-body">
-            <h1 class="card-title">{{ lesson.title }}</h1>
-            <p class="text-muted">Lesson {{ lesson.order }} of {{ course.title }}</p>
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h1 class="card-title">{{ lesson.title }}</h1>
+                    <p class="text-muted">Lesson {{ lesson.order }} of {{ course.title }}</p>
+                </div>
+                <div class="lesson-actions">
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="toggleBookmark({{ lesson.id }})" id="bookmarkBtn">
+                        <i class="fas fa-bookmark" id="bookmarkIcon"></i>
+                        <span id="bookmarkText">Bookmark</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="markAsCompleted({{ lesson.id }})" id="completeBtn">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Mark Complete</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Progress indicator -->
+            <div class="lesson-progress mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">Progress</span>
+                    <span class="badge bg-primary" id="progressBadge">{{ lesson_progress.status|default('not_started')|title }}</span>
+                </div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar" id="progressBar" style="width: {{ 0 if not lesson_progress or lesson_progress.status == 'not_started' else (50 if lesson_progress.status == 'in_progress' else 100) }}%"></div>
+                </div>
+            </div>
             
             <hr>
             
@@ -94,10 +119,246 @@
         </div>
     </div>
     
+    <!-- Notes Section -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-sticky-note me-2"></i>My Notes
+                <button class="btn btn-sm btn-outline-primary float-end" onclick="toggleNoteForm()">
+                    <i class="fas fa-plus"></i> Add Note
+                </button>
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Add Note Form -->
+            <div id="noteForm" class="mb-3" style="display: none;">
+                <div class="mb-3">
+                    <textarea class="form-control" id="noteText" rows="3" placeholder="Add your note here..."></textarea>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="saveNote({{ lesson.id }})">
+                    <i class="fas fa-save"></i> Save Note
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="toggleNoteForm()">
+                    Cancel
+                </button>
+            </div>
+            
+            <!-- Existing Notes -->
+            <div id="notesContainer">
+                {% if user_notes %}
+                    {% for note in user_notes %}
+                    <div class="note-item mb-3 p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <p class="mb-1">{{ note.note_text }}</p>
+                                <small class="text-muted">{{ note.created_at.strftime('%d %b, %Y at %I:%M %p') }}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteNote({{ note.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <p class="text-muted">No notes yet. Add your first note to keep track of important information!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
     <div class="mt-4 text-center">
         <a href="{{ url_for('view_course', course_id=course.id) }}" class="btn btn-secondary">
             <i class="fas fa-list"></i> Back to Course
         </a>
     </div>
 </div>
+
+<!-- JavaScript for Interactive Features -->
+<script>
+// Check if lesson is bookmarked on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkBookmarkStatus({{ lesson.id }});
+    updateProgressDisplay();
+});
+
+function toggleBookmark(lessonId) {
+    fetch(`/api/toggle_bookmark/${lessonId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateBookmarkButton(data.is_bookmarked);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function checkBookmarkStatus(lessonId) {
+    fetch(`/api/check_bookmark/${lessonId}`)
+    .then(response => response.json())
+    .then(data => {
+        updateBookmarkButton(data.is_bookmarked);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function updateBookmarkButton(isBookmarked) {
+    const btn = document.getElementById('bookmarkBtn');
+    const icon = document.getElementById('bookmarkIcon');
+    const text = document.getElementById('bookmarkText');
+    
+    if (isBookmarked) {
+        btn.className = 'btn btn-sm btn-primary me-2';
+        icon.className = 'fas fa-bookmark';
+        text.textContent = 'Bookmarked';
+    } else {
+        btn.className = 'btn btn-sm btn-outline-primary me-2';
+        icon.className = 'far fa-bookmark';
+        text.textContent = 'Bookmark';
+    }
+}
+
+function markAsCompleted(lessonId) {
+    fetch(`/api/mark_lesson_complete/${lessonId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateProgressDisplay('completed');
+            showSuccessMessage('Lesson marked as completed!');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function updateProgressDisplay(status = null) {
+    const progressBar = document.getElementById('progressBar');
+    const progressBadge = document.getElementById('progressBadge');
+    const completeBtn = document.getElementById('completeBtn');
+    
+    if (status === 'completed') {
+        progressBar.style.width = '100%';
+        progressBadge.textContent = 'Completed';
+        progressBadge.className = 'badge bg-success';
+        completeBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span>Completed</span>';
+        completeBtn.disabled = true;
+    } else if (status === 'in_progress') {
+        progressBar.style.width = '50%';
+        progressBadge.textContent = 'In Progress';
+        progressBadge.className = 'badge bg-warning';
+    }
+}
+
+function toggleNoteForm() {
+    const noteForm = document.getElementById('noteForm');
+    const noteText = document.getElementById('noteText');
+    
+    if (noteForm.style.display === 'none') {
+        noteForm.style.display = 'block';
+        noteText.focus();
+    } else {
+        noteForm.style.display = 'none';
+        noteText.value = '';
+    }
+}
+
+function saveNote(lessonId) {
+    const noteText = document.getElementById('noteText').value.trim();
+    
+    if (!noteText) {
+        alert('Please enter a note before saving.');
+        return;
+    }
+    
+    fetch(`/api/save_note/${lessonId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            note_text: noteText
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Refresh to show new note
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function deleteNote(noteId) {
+    if (confirm('Are you sure you want to delete this note?')) {
+        fetch(`/api/delete_note/${noteId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // Refresh to remove deleted note
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+}
+
+function showSuccessMessage(message) {
+    // Create a simple success alert
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.querySelector('.section').insertBefore(alert, document.querySelector('.section').firstChild);
+    
+    // Auto-dismiss after 3 seconds
+    setTimeout(() => {
+        alert.remove();
+    }, 3000);
+}
+
+// Mark lesson as in progress when page loads
+fetch(`/api/mark_lesson_progress/{{ lesson.id }}`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        status: 'in_progress'
+    })
+})
+.then(response => response.json())
+.then(data => {
+    if (data.success && data.status === 'in_progress') {
+        updateProgressDisplay('in_progress');
+    }
+})
+.catch(error => {
+    console.error('Error:', error);
+});
+</script>
 {% endblock %}

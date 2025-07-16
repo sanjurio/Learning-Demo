@@ -63,6 +63,46 @@ class User(UserMixin, db.Model):
         """Check if user can view text content (Erlang documentation and tutorials)"""
         return self.access_level in ['text_only', 'full_access']
     
+    def get_progress_stats(self):
+        """Get user's learning progress statistics"""
+        total_lessons = db.session.query(Lesson).join(Course).join(CourseInterest).join(UserInterest).filter(
+            UserInterest.user_id == self.id,
+            UserInterest.access_granted == True
+        ).count()
+        
+        completed_lessons = self.lesson_progress.filter(
+            UserLessonProgress.status == 'completed'
+        ).count()
+        
+        in_progress_lessons = self.lesson_progress.filter(
+            UserLessonProgress.status == 'in_progress'
+        ).count()
+        
+        return {
+            'total_lessons': total_lessons,
+            'completed_lessons': completed_lessons,
+            'in_progress_lessons': in_progress_lessons,
+            'completion_percentage': (completed_lessons / total_lessons * 100) if total_lessons > 0 else 0
+        }
+    
+    def get_recent_activity(self, limit=5):
+        """Get user's recent activities"""
+        return self.activities.order_by(UserActivity.created_at.desc()).limit(limit).all()
+    
+    def get_bookmarked_lessons(self):
+        """Get user's bookmarked lessons"""
+        return db.session.query(Lesson).join(UserBookmark).filter(
+            UserBookmark.user_id == self.id
+        ).all()
+    
+    def get_current_lesson(self):
+        """Get the lesson user is currently working on"""
+        progress = self.lesson_progress.filter(
+            UserLessonProgress.status == 'in_progress'
+        ).order_by(UserLessonProgress.last_interaction.desc()).first()
+        
+        return progress.lesson if progress else None
+    
     def __repr__(self):
         return f'<User {self.username}>'
 
@@ -73,6 +113,9 @@ class Interest(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Interest {self.name}>'
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relationships
@@ -214,3 +257,57 @@ class ForumReply(db.Model):
     
     def __repr__(self):
         return f'<ForumReply {self.id} by user {self.user_id}>'
+
+
+class UserNote(db.Model):
+    """User notes for lessons - interactive learning feature"""
+    __tablename__ = 'user_notes'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'), nullable=False)
+    note_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('notes', lazy='dynamic'))
+    lesson = db.relationship('Lesson', backref=db.backref('notes', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<UserNote {self.id} by user {self.user_id}>'
+
+
+class UserBookmark(db.Model):
+    """User bookmarks for lessons - interactive learning feature"""
+    __tablename__ = 'user_bookmarks'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('bookmarks', lazy='dynamic'))
+    lesson = db.relationship('Lesson', backref=db.backref('bookmarks', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<UserBookmark {self.id} by user {self.user_id}>'
+
+
+class UserActivity(db.Model):
+    """Track user activities for enhanced dashboard"""
+    __tablename__ = 'user_activities'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    activity_type = db.Column(db.String(50), nullable=False)  # lesson_started, lesson_completed, note_added, etc.
+    activity_data = db.Column(db.Text)  # JSON data for the activity
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id'))
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('activities', lazy='dynamic'))
+    lesson = db.relationship('Lesson', backref=db.backref('activities', lazy='dynamic'))
+    course = db.relationship('Course', backref=db.backref('activities', lazy='dynamic'))
+    
+    def __repr__(self):
+        return f'<UserActivity {self.activity_type} by user {self.user_id}>'
