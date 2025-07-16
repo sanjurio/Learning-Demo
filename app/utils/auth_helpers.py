@@ -35,7 +35,7 @@ def generate_qr_code(username, secret):
         img.save(img_buffer, format='PNG')
         img_str = base64.b64encode(img_buffer.getvalue()).decode()
         
-        return f"data:image/png;base64,{img_str}"
+        return img_str
     except Exception as e:
         print(f"Error generating QR code: {e}")
         return None

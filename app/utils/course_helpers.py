@@ -69,6 +69,8 @@ def user_can_access_course(user, course):
 def get_user_interests_status(user_id):
     """Get user interests with their access status"""
     from .. import db
+    from ..models import UserInterest, Interest
+    
     user_interests = db.session.query(UserInterest, Interest).join(
         Interest, UserInterest.interest_id == Interest.id
     ).filter(UserInterest.user_id == user_id).all()

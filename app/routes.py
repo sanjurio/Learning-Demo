@@ -192,25 +192,8 @@ def register_routes(app):
         # Get user's interests and available courses
         user_interests = get_user_interests_status(current_user.id)
 
-        # Get courses based on user's approved interests
-        approved_interest_ids = [ui['interest'].id for ui in user_interests if ui['access_granted']]
-
-        available_courses = []
-        if approved_interest_ids:
-            # Get Fun interest ID
-            fun_interest = Interest.query.filter_by(name='Fun').first()
-
-            # Filter out Fun courses for BT users only
-            if current_user.email_domain == 'bt.com' and fun_interest:
-                approved_interest_ids = [id for id in approved_interest_ids if id != fun_interest.id]
-            # THBS users can access Fun courses - no filtering needed
-
-            if approved_interest_ids:
-                available_courses = db.session.query(Course)\
-                    .join(CourseInterest, Course.id == CourseInterest.course_id)\
-                    .filter(CourseInterest.interest_id.in_(approved_interest_ids))\
-                    .distinct()\
-                    .all()
+        # Get courses that the user can access
+        available_courses = get_user_accessible_courses(current_user)
 
         # Get user's progress statistics
         progress_stats = current_user.get_progress_stats()
