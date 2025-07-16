@@ -20,22 +20,14 @@
                         
                         <div class="form-group">
                             {{ form.username.label(class="form-label") }}
-                            {{ form.username(class="form-control") }}
-                            <div class="error-message">
-                                {% for error in form.username.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                            {{ form.username(class="form-control", readonly=true, style="background-color: #2a2d31; cursor: not-allowed;") }}
+                            <div class="form-text">Username cannot be changed</div>
                         </div>
                         
                         <div class="form-group">
                             {{ form.email.label(class="form-label") }}
-                            {{ form.email(class="form-control") }}
-                            <div class="error-message">
-                                {% for error in form.email.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
+                            {{ form.email(class="form-control", readonly=true, style="background-color: #2a2d31; cursor: not-allowed;") }}
+                            <div class="form-text">Email cannot be changed</div>
                         </div>
                         
                         <hr>

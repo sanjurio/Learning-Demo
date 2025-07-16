@@ -306,9 +306,6 @@ def register_routes(app):
     def profile():
         form = ProfileForm()
         if form.validate_on_submit():
-            current_user.username = form.username.data
-            current_user.email = form.email.data
-
             if form.new_password.data:
                 if form.current_password.data and current_user.check_password(form.current_password.data):
                     current_user.set_password(form.new_password.data)
