@@ -8,6 +8,21 @@ This is a comprehensive AI-powered learning platform built with Flask that provi
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (July 16, 2025)
+
+✓ Successfully migrated from Replit Agent to Replit environment
+✓ Fixed Flask app architecture to follow Replit standards with ProxyFix
+✓ Set up PostgreSQL database with proper connection and environment variables
+✓ Implemented domain-based access control system:
+  - @thbs.com users: full_access (can view text and video content)
+  - @bt.com users: text_only (can view only text content)
+  - Other domains: basic (require admin approval)
+✓ Enhanced User model with access_level and email_domain fields
+✓ Added content type support to lessons (text, video, mixed)
+✓ Created sample courses and lessons to demonstrate access control
+✓ Fixed admin approval system - all users now require admin approval before login
+✓ Updated database schema with required columns for new features
+
 ## System Architecture
 
 ### Backend Architecture

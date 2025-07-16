@@ -159,6 +159,14 @@ def two_factor_auth():
                                    title='Two-Factor Authentication',
                                    form=form)
 
+        # Double-check user approval status before final login
+        if not user.is_approved:
+            app.logger.warning(f"User {user.username} not approved, denying login")
+            session.pop('user_id_for_2fa', None)
+            session.pop('remember_me', None)
+            flash('Your account is pending approval from an administrator.', 'warning')
+            return redirect(url_for('login'))
+
         if verify_totp(user.otp_secret, token):
             app.logger.info(
                 f"Successful 2FA verification for user: {user.username}")

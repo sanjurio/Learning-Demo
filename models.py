@@ -52,10 +52,10 @@ class User(UserMixin, db.Model):
             
             if domain == 'thbs.com':
                 self.access_level = 'full_access'
-                self.is_approved = True  # Auto-approve THBS users
+                self.is_approved = False  # Still require admin approval
             elif domain == 'bt.com':
-                self.access_level = 'text_only'
-                self.is_approved = True  # Auto-approve BT users
+                self.access_level = 'text_only'  
+                self.is_approved = False  # Still require admin approval
             else:
                 self.access_level = 'basic'
                 self.is_approved = False  # Require admin approval for others
