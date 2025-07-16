@@ -348,3 +348,195 @@ def register_routes(app):
         return render_template('user/lesson.html',
                                title=lesson.title,
                                lesson=lesson)
+
+    # Admin routes for managing interests
+    @app.route('/admin/interests/add', methods=['GET', 'POST'])
+    @login_required
+    def admin_add_interest():
+        if not current_user.is_admin:
+            abort(403)
+
+        form = InterestForm()
+        if form.validate_on_submit():
+            interest = Interest(
+                name=form.name.data,
+                description=form.description.data,
+                created_by=current_user.id
+            )
+            db.session.add(interest)
+            db.session.commit()
+            flash('Interest created successfully!', 'success')
+            return redirect(url_for('admin_interests'))
+
+        return render_template('admin/edit_interest.html', title='Add Interest', form=form)
+
+    @app.route('/admin/interests/<int:interest_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    def admin_edit_interest(interest_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        interest = Interest.query.get_or_404(interest_id)
+        form = InterestForm()
+
+        if form.validate_on_submit():
+            interest.name = form.name.data
+            interest.description = form.description.data
+            db.session.commit()
+            flash('Interest updated successfully!', 'success')
+            return redirect(url_for('admin_interests'))
+
+        form.name.data = interest.name
+        form.description.data = interest.description
+        return render_template('admin/edit_interest.html', title='Edit Interest', form=form, interest=interest)
+
+    @app.route('/admin/interests/<int:interest_id>/delete', methods=['POST'])
+    @login_required
+    def admin_delete_interest(interest_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        interest = Interest.query.get_or_404(interest_id)
+        db.session.delete(interest)
+        db.session.commit()
+        flash('Interest deleted successfully!', 'success')
+        return redirect(url_for('admin_interests'))
+
+    @app.route('/admin/users/<int:user_id>/interests')
+    @login_required
+    def admin_user_interests(user_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        user = User.query.get_or_404(user_id)
+        interests = Interest.query.all()
+        user_interests_status = get_user_interests_status(user_id)
+
+        return render_template('admin/user_interests.html',
+                               title=f'Manage Interests for {user.username}',
+                               user=user,
+                               interests=interests,
+                               user_interests=user_interests_status)
+
+    @app.route('/admin/user-interest/update', methods=['POST'])
+    @login_required
+    def admin_update_user_interest():
+        if not current_user.is_admin:
+            abort(403)
+
+        user_id = request.form.get('user_id')
+        interest_id = request.form.get('interest_id')
+        action = request.form.get('action')
+
+        if user_id and interest_id and action:
+            try:
+                user_id = int(user_id)
+                interest_id = int(interest_id)
+                
+                if action == 'grant':
+                    if grant_interest_access(user_id, interest_id):
+                        flash('Interest access granted successfully.', 'success')
+                    else:
+                        flash('Error granting interest access.', 'danger')
+                elif action == 'revoke':
+                    if revoke_interest_access(user_id, interest_id):
+                        flash('Interest access revoked successfully.', 'success')
+                    else:
+                        flash('Error revoking interest access.', 'danger')
+                else:
+                    flash('Invalid action specified.', 'danger')
+            except ValueError:
+                flash('Invalid user or interest ID.', 'danger')
+        else:
+            flash('Missing required form data.', 'danger')
+
+        return redirect(url_for('admin_user_interests', user_id=user_id))
+
+    # Admin course management routes
+    @app.route('/admin/courses/add', methods=['GET', 'POST'])
+    @login_required
+    def admin_add_course():
+        if not current_user.is_admin:
+            abort(403)
+
+        form = CourseForm()
+        interests = Interest.query.all()
+        form.interests.choices = [(i.id, i.name) for i in interests]
+
+        if form.validate_on_submit():
+            course = Course(
+                title=form.title.data,
+                description=form.description.data,
+                cover_image_url=form.cover_image_url.data,
+                created_by=current_user.id
+            )
+            db.session.add(course)
+            db.session.flush()  # Get the course ID
+
+            # Add course-interest relationships
+            for interest_id in form.interests.data:
+                course_interest = CourseInterest(
+                    course_id=course.id,
+                    interest_id=interest_id,
+                    created_by=current_user.id
+                )
+                db.session.add(course_interest)
+
+            db.session.commit()
+            flash('Course created successfully!', 'success')
+            return redirect(url_for('admin_courses'))
+
+        return render_template('admin/edit_course.html', title='Add Course', form=form)
+
+    @app.route('/admin/courses/<int:course_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    def admin_edit_course(course_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        course = Course.query.get_or_404(course_id)
+        form = CourseForm()
+        interests = Interest.query.all()
+        form.interests.choices = [(i.id, i.name) for i in interests]
+
+        if form.validate_on_submit():
+            course.title = form.title.data
+            course.description = form.description.data
+            course.cover_image_url = form.cover_image_url.data
+
+            # Update course-interest relationships
+            CourseInterest.query.filter_by(course_id=course.id).delete()
+            for interest_id in form.interests.data:
+                course_interest = CourseInterest(
+                    course_id=course.id,
+                    interest_id=interest_id,
+                    created_by=current_user.id
+                )
+                db.session.add(course_interest)
+
+            db.session.commit()
+            flash('Course updated successfully!', 'success')
+            return redirect(url_for('admin_courses'))
+
+        # Pre-populate form
+        form.title.data = course.title
+        form.description.data = course.description
+        form.cover_image_url.data = course.cover_image_url
+        
+        # Set selected interests
+        current_interests = [ci.interest_id for ci in CourseInterest.query.filter_by(course_id=course.id).all()]
+        form.interests.data = current_interests
+
+        return render_template('admin/edit_course.html', title='Edit Course', form=form, course=course)
+
+    @app.route('/admin/courses/<int:course_id>/delete', methods=['POST'])
+    @login_required
+    def admin_delete_course(course_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        course = Course.query.get_or_404(course_id)
+        db.session.delete(course)
+        db.session.commit()
+        flash('Course deleted successfully!', 'success')
+        return redirect(url_for('admin_courses'))
