@@ -278,3 +278,73 @@ def register_routes(app):
                 return jsonify({'error': str(e)})
         
         return render_template('document_analysis.html', title='Document Analysis')
+
+    @app.route('/profile', methods=['GET', 'POST'])
+    @login_required
+    def profile():
+        form = ProfileForm()
+        if form.validate_on_submit():
+            current_user.username = form.username.data
+            current_user.email = form.email.data
+            
+            if form.new_password.data:
+                if form.current_password.data and current_user.check_password(form.current_password.data):
+                    current_user.set_password(form.new_password.data)
+                    flash('Password updated successfully!', 'success')
+                else:
+                    flash('Current password is incorrect.', 'danger')
+                    return render_template('user/profile.html', title='Profile', form=form)
+            
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('profile'))
+        
+        # Pre-populate form with current user data
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+        
+        return render_template('user/profile.html', title='Profile', form=form)
+
+    @app.route('/user/interests')
+    @login_required
+    def user_interests():
+        if not current_user.is_approved:
+            flash('Your account is pending approval.', 'warning')
+            return redirect(url_for('logout'))
+
+        all_interests = Interest.query.all()
+        user_interests_status = get_user_interests_status(current_user.id)
+        
+        return render_template('user/interests.html',
+                               title='My Interests',
+                               interests=all_interests,
+                               user_interests=user_interests_status)
+
+    @app.route('/courses/<int:course_id>')
+    @login_required
+    def view_course(course_id):
+        course = Course.query.get_or_404(course_id)
+        
+        if not user_can_access_course(current_user, course):
+            flash('You do not have access to this course.', 'danger')
+            return redirect(url_for('user_dashboard'))
+        
+        lessons = Lesson.query.filter_by(course_id=course.id).order_by(Lesson.order).all()
+        
+        return render_template('user/course.html',
+                               title=course.title,
+                               course=course,
+                               lessons=lessons)
+
+    @app.route('/lessons/<int:lesson_id>')
+    @login_required
+    def view_lesson(lesson_id):
+        lesson = Lesson.query.get_or_404(lesson_id)
+        
+        if not user_can_access_course(current_user, lesson.course):
+            flash('You do not have access to this lesson.', 'danger')
+            return redirect(url_for('user_dashboard'))
+        
+        return render_template('user/lesson.html',
+                               title=lesson.title,
+                               lesson=lesson)
