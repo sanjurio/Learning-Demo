@@ -67,6 +67,12 @@ def register_routes(app):
                 flash('Your account is missing 2FA configuration. Please contact an administrator.', 'danger')
                 return render_template('auth/login.html', title='Sign In', form=form)
 
+            # Check if user has completed 2FA setup
+            if not user.is_2fa_enabled:
+                session['setup_user_id'] = user.id
+                flash('Please complete your two-factor authentication setup.', 'info')
+                return redirect(url_for('setup_2fa'))
+
             # Store user info in session for 2FA verification
             session['user_id'] = user.id
             session['remember_me'] = form.remember_me.data
@@ -299,10 +305,49 @@ def register_routes(app):
             user.otp_secret = generate_otp_secret()
             db.session.commit()
 
-            flash('Registration successful! Your account is pending admin approval.', 'success')
-            return redirect(url_for('login', registration_complete=1))
+            # Store user ID in session for 2FA setup
+            session['setup_user_id'] = user.id
+            flash('Registration successful! Please set up two-factor authentication.', 'success')
+            return redirect(url_for('setup_2fa'))
 
         return render_template('auth/register.html', title='Register', form=form)
+
+    @app.route('/setup-2fa', methods=['GET', 'POST'])
+    def setup_2fa():
+        if current_user.is_authenticated:
+            return redirect(url_for('index'))
+
+        user_id = session.get('setup_user_id')
+        if not user_id:
+            flash('Invalid session. Please register again.', 'danger')
+            return redirect(url_for('register'))
+
+        user = User.query.get(user_id)
+        if not user or not user.otp_secret:
+            flash('Invalid session. Please register again.', 'danger')
+            return redirect(url_for('register'))
+
+        form = TwoFactorForm()
+        
+        if form.validate_on_submit():
+            if verify_totp(user.otp_secret, form.token.data):
+                user.is_2fa_enabled = True
+                db.session.commit()
+                session.pop('setup_user_id', None)
+                flash('Two-factor authentication set up successfully! Your account is pending admin approval.', 'success')
+                return redirect(url_for('login'))
+            else:
+                flash('Invalid authentication code. Please try again.', 'danger')
+
+        # Generate QR code for 2FA setup
+        qr_code = generate_qr_code(user.username, user.otp_secret)
+        
+        return render_template('auth/two_factor_setup.html', 
+                               title='Set Up Two-Factor Authentication',
+                               form=form,
+                               qr_code=qr_code,
+                               username=user.username,
+                               secret=user.otp_secret)
 
     @app.route('/forum')
     def forum_index():
