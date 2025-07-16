@@ -75,15 +75,12 @@
                         <table class="user-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 40px;">
-                        <input type="checkbox" id="masterCheckbox" onclick="toggleAllCheckboxes(this)" />
-                    </th>
-                    <th>User</th>
-                    <th>Email</th>
-                    <th>Interest</th>
-                    <th>Requested Date</th>
-                    <th>Actions</th>
-                </tr>
+                                    <th style="width: 40px;">Select</th>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Interest</th>
+                                    <th>Actions</th>
+                                </tr>
             </thead>
             <tbody>
                 {% set processed_users = {} %}
@@ -97,13 +94,12 @@
                 {% for email, user_requests in processed_users.items() %}
                     {% set first_request = user_requests[0] %}
                     <tr>
-                        <td rowspan="{{ user_requests|length }}">
-                            <input type="checkbox" name="selected_requests" value="{{ first_request.user.id }}-all" class="request-checkbox" />
+                        <td>
+                            <input type="checkbox" name="selected_requests" value="{{ first_request.user.id }}_{{ first_request.interest.id }}" class="request-checkbox" />
                         </td>
                         <td rowspan="{{ user_requests|length }}">{{ first_request.user.username }}</td>
                         <td rowspan="{{ user_requests|length }}">{{ email }}</td>
                         <td>{{ user_requests[0].interest.name }}</td>
-                        <td>{{ user_requests[0].user_interest.created_at.strftime('%d %b, %Y') if user_requests[0].user_interest.created_at else 'N/A' }}</td>
                         <td>
                             <form method="post" action="{{ url_for('admin_approve_interest_request') }}" class="d-inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -127,8 +123,10 @@
                     </tr>
                     {% for request in user_requests[1:] %}
                     <tr>
+                        <td>
+                            <input type="checkbox" name="selected_requests" value="{{ request.user.id }}_{{ request.interest.id }}" class="request-checkbox" />
+                        </td>
                         <td>{{ request.interest.name }}</td>
-                        <td>{{ request.user_interest.created_at.strftime('%d %b, %Y') if request.user_interest.created_at else 'N/A' }}</td>
                         <td>
                             <form method="post" action="{{ url_for('admin_approve_interest_request') }}" class="d-inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

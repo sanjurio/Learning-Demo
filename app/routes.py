@@ -83,7 +83,7 @@ def register_routes(app):
 
         pending_users = get_pending_users()
         form = UserApprovalForm()
-        
+
         # Get stats for dashboard cards
         stats = {
             'pending_users_count': User.query.filter_by(is_approved=False, is_admin=False).count(),
@@ -141,7 +141,7 @@ def register_routes(app):
             return redirect(url_for('index'))
 
         courses = Course.query.all()
-        
+
         # Get stats for dashboard cards
         stats = {
             'pending_users_count': User.query.filter_by(is_approved=False, is_admin=False).count(),
@@ -149,7 +149,7 @@ def register_routes(app):
             'courses_count': Course.query.count(),
             'interests_count': Interest.query.count()
         }
-        
+
         return render_template('admin/content.html',
                                title='Manage Courses',
                                courses=courses,
@@ -193,12 +193,12 @@ def register_routes(app):
         if approved_interest_ids:
             # Get Fun interest ID
             fun_interest = Interest.query.filter_by(name='Fun').first()
-            
+
             # Filter out Fun courses for BT users only
             if current_user.email_domain == 'bt.com' and fun_interest:
                 approved_interest_ids = [id for id in approved_interest_ids if id != fun_interest.id]
             # THBS users can access Fun courses - no filtering needed
-            
+
             if approved_interest_ids:
                 available_courses = db.session.query(Course)\
                     .join(CourseInterest, Course.id == CourseInterest.course_id)\
@@ -226,7 +226,7 @@ def register_routes(app):
             return redirect(url_for('index'))
 
         users = User.query.filter_by(is_admin=False).all()
-        
+
         # Get stats for dashboard cards
         stats = {
             'pending_users_count': User.query.filter_by(is_approved=False, is_admin=False).count(),
@@ -234,7 +234,7 @@ def register_routes(app):
             'courses_count': Course.query.count(),
             'interests_count': Interest.query.count()
         }
-        
+
         return render_template('admin/users.html',
                                title='Manage Users',
                                users=users,
@@ -248,7 +248,7 @@ def register_routes(app):
             return redirect(url_for('index'))
 
         interests = Interest.query.all()
-        
+
         # Get stats for dashboard cards
         stats = {
             'pending_users_count': User.query.filter_by(is_approved=False, is_admin=False).count(),
@@ -256,7 +256,7 @@ def register_routes(app):
             'courses_count': Course.query.count(),
             'interests_count': Interest.query.count()
         }
-        
+
         return render_template('admin/interests.html',
                                title='Manage Interests',
                                interests=interests,
@@ -373,11 +373,11 @@ def register_routes(app):
 
         form = InterestSelectionForm()
         all_interests = Interest.query.all()
-        
+
         # Filter out Fun interest for BT users only, THBS users can see it
         if current_user.email_domain == 'bt.com':
             all_interests = [i for i in all_interests if i.name != 'Fun']
-        
+
         form.interests.choices = [(i.id, i.name) for i in all_interests]
 
         if form.validate_on_submit():
@@ -893,52 +893,47 @@ def register_routes(app):
         selected_requests = request.form.getlist('selected_requests')
         bulk_action = request.form.get('bulk_action')
 
-        if not selected_requests or not bulk_action:
-            flash('No requests selected or invalid action.', 'danger')
-            return redirect(url_for('admin_user_interest_requests'))
+        if selected_requests and bulk_action:
+            success_count = 0
+            error_count = 0
 
-        success_count = 0
-        error_count = 0
+            for request_id in selected_requests:
+                try:
+                    # Handle individual interest request (format: user_id_interest_id)
+                    parts = request_id.split('_')
+                    if len(parts) == 2:
+                        user_id, interest_id = int(parts[0]), int(parts[1])
+                        user_interest = UserInterest.query.filter_by(
+                            user_id=user_id,
+                            interest_id=interest_id,
+                            access_granted=False
+                        ).first()
 
-        for request_id in selected_requests:
-            try:
-                user_id, interest_id = request_id.split('-')
-                user_id = int(user_id)
-                interest_id = int(interest_id)
-
-                user_interest = UserInterest.query.filter_by(
-                    user_id=user_id,
-                    interest_id=interest_id
-                ).first()
-
-                if bulk_action == 'approve':
-                    if user_interest:
-                        user_interest.access_granted = True
-                        user_interest.granted_at = datetime.utcnow()
-                        user_interest.granted_by = current_user.id
-                        success_count += 1
+                        if user_interest:
+                            if bulk_action == 'approve':
+                                user_interest.access_granted = True
+                                user_interest.granted_at = datetime.utcnow()
+                                user_interest.granted_by = current_user.id
+                                success_count += 1
+                            elif bulk_action == 'reject':
+                                db.session.delete(user_interest)
+                                success_count += 1
+                        else:
+                            error_count += 1
                     else:
                         error_count += 1
-                elif bulk_action == 'reject':
-                    if user_interest:
-                        db.session.delete(user_interest)
-                        success_count += 1
-                    else:
-                        error_count += 1
-            except (ValueError, AttributeError):
-                error_count += 1
 
-        try:
+                except (ValueError, AttributeError):
+                    error_count += 1
+
             db.session.commit()
-            if bulk_action == 'approve':
-                flash(f'Successfully approved {success_count} interest request(s).', 'success')
-            else:
-                flash(f'Successfully rejected {success_count} interest request(s).', 'success')
-            
+
+            if success_count > 0:
+                action_word = 'approved' if bulk_action == 'approve' else 'rejected'
+                flash(f'Successfully {action_word} {success_count} interest request(s).', 'success')
             if error_count > 0:
-                flash(f'{error_count} request(s) could not be processed.', 'warning')
-        except Exception as e:
-            db.session.rollback()
-            flash('An error occurred while processing bulk action.', 'danger')
+                flash(f'Failed to process {error_count} request(s).', 'warning')
+        else:
+            flash('No requests selected or invalid action.', 'warning')
 
         return redirect(url_for('admin_user_interest_requests'))
