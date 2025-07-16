@@ -951,48 +951,73 @@ def register_routes(app):
         selected_requests = request.form.getlist('selected_requests')
         bulk_action = request.form.get('bulk_action')
 
-        if selected_requests and bulk_action:
-            success_count = 0
-            error_count = 0
+        print(f"DEBUG: Selected requests: {selected_requests}")
+        print(f"DEBUG: Bulk action: {bulk_action}")
 
-            for request_id in selected_requests:
-                try:
-                    # Handle individual interest request (format: user_id_interest_id)
-                    parts = request_id.split('_')
-                    if len(parts) == 2:
-                        user_id, interest_id = int(parts[0]), int(parts[1])
-                        user_interest = UserInterest.query.filter_by(
-                            user_id=user_id,
-                            interest_id=interest_id,
-                            access_granted=False
-                        ).first()
+        if not selected_requests:
+            flash('No requests selected. Please select at least one request.', 'warning')
+            return redirect(url_for('admin_user_interest_requests'))
 
-                        if user_interest:
-                            if bulk_action == 'approve':
-                                if grant_interest_access(user_id, interest_id):
-                                    success_count += 1
-                                else:
-                                    error_count += 1
-                            elif bulk_action == 'reject':
-                                db.session.delete(user_interest)
+        if not bulk_action:
+            flash('Invalid action specified.', 'warning')
+            return redirect(url_for('admin_user_interest_requests'))
+
+        success_count = 0
+        error_count = 0
+
+        for request_id in selected_requests:
+            try:
+                # Handle individual interest request (format: user_id_interest_id)
+                parts = request_id.split('_')
+                print(f"DEBUG: Processing request_id: {request_id}, parts: {parts}")
+                
+                if len(parts) == 2:
+                    user_id, interest_id = int(parts[0]), int(parts[1])
+                    user_interest = UserInterest.query.filter_by(
+                        user_id=user_id,
+                        interest_id=interest_id,
+                        access_granted=False
+                    ).first()
+
+                    print(f"DEBUG: Found user_interest: {user_interest is not None}")
+
+                    if user_interest:
+                        if bulk_action == 'approve':
+                            if grant_interest_access(user_id, interest_id):
                                 success_count += 1
-                        else:
-                            error_count += 1
+                                print(f"DEBUG: Successfully approved {user_id}_{interest_id}")
+                            else:
+                                error_count += 1
+                                print(f"DEBUG: Failed to approve {user_id}_{interest_id}")
+                        elif bulk_action == 'reject':
+                            db.session.delete(user_interest)
+                            success_count += 1
+                            print(f"DEBUG: Successfully rejected {user_id}_{interest_id}")
                     else:
                         error_count += 1
-
-                except (ValueError, AttributeError):
+                        print(f"DEBUG: UserInterest not found for {user_id}_{interest_id}")
+                else:
                     error_count += 1
+                    print(f"DEBUG: Invalid request_id format: {request_id}")
 
+            except (ValueError, AttributeError) as e:
+                error_count += 1
+                print(f"DEBUG: Exception processing {request_id}: {e}")
+
+        try:
             db.session.commit()
+            print(f"DEBUG: Database committed successfully")
+        except Exception as e:
+            db.session.rollback()
+            print(f"DEBUG: Database commit failed: {e}")
+            flash('Database error occurred. Please try again.', 'danger')
+            return redirect(url_for('admin_user_interest_requests'))
 
-            if success_count > 0:
-                action_word = 'approved' if bulk_action == 'approve' else 'rejected'
-                flash(f'Successfully {action_word} {success_count} interest request(s).', 'success')
-            if error_count > 0:
-                flash(f'Failed to process {error_count} request(s).', 'warning')
-        else:
-            flash('No requests selected or invalid action.', 'warning')
+        if success_count > 0:
+            action_word = 'approved' if bulk_action == 'approve' else 'rejected'
+            flash(f'Successfully {action_word} {success_count} interest request(s).', 'success')
+        if error_count > 0:
+            flash(f'Failed to process {error_count} request(s).', 'warning')
 
         return redirect(url_for('admin_user_interest_requests'))
     
