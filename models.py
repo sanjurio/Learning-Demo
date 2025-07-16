@@ -18,6 +18,8 @@ class User(UserMixin, db.Model):
     is_approved = db.Column(db.Boolean, default=False)
     otp_secret = db.Column(db.String(32))
     is_2fa_enabled = db.Column(db.Boolean, default=False)
+    access_level = db.Column(db.String(20), default='basic')  # basic, text_only, full_access
+    email_domain = db.Column(db.String(50))  # Store email domain for quick access
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -41,6 +43,30 @@ class User(UserMixin, db.Model):
         
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+    def set_access_based_on_domain(self):
+        """Set user access level based on email domain"""
+        if self.email:
+            domain = self.email.split('@')[-1].lower()
+            self.email_domain = domain
+            
+            if domain == 'thbs.com':
+                self.access_level = 'full_access'
+                self.is_approved = True  # Auto-approve THBS users
+            elif domain == 'bt.com':
+                self.access_level = 'text_only'
+                self.is_approved = True  # Auto-approve BT users
+            else:
+                self.access_level = 'basic'
+                self.is_approved = False  # Require admin approval for others
+    
+    def can_view_videos(self):
+        """Check if user can view video content"""
+        return self.access_level == 'full_access'
+    
+    def can_view_text(self):
+        """Check if user can view text content"""
+        return self.access_level in ['text_only', 'full_access']
     
     def __repr__(self):
         return f'<User {self.username}>'
@@ -116,6 +142,8 @@ class Lesson(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    content_type = db.Column(db.String(20), default='text')  # text, video, mixed
+    video_url = db.Column(db.String(500))  # For video content
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), nullable=False)
     order = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -123,6 +151,23 @@ class Lesson(db.Model):
     
     # Relationship with user progress
     user_progress = db.relationship('UserLessonProgress', backref='lesson', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def can_view_content(self, user):
+        """Check if user can view this lesson's content based on their access level"""
+        if not user.is_authenticated:
+            return False
+            
+        if self.content_type == 'text':
+            return user.can_view_text()
+        elif self.content_type == 'video':
+            return user.can_view_videos()
+        elif self.content_type == 'mixed':
+            # For mixed content, return what parts they can see
+            return {
+                'text': user.can_view_text(),
+                'video': user.can_view_videos()
+            }
+        return False
     
     def __repr__(self):
         return f'<Lesson {self.title}>'

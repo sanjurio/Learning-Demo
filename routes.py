@@ -407,11 +407,14 @@ def setup_2fa_register():
                     user = User(
                         username=username,
                         email=email,
-                        is_approved=False,  # Requires admin approval
+                        is_approved=False,  # Will be set by domain check
                         otp_secret=otp_secret,
                         is_2fa_enabled=True  # 2FA is mandatory
                     )
                     user.set_password(registration_data.get('password'))
+                    
+                    # Set access level and approval based on email domain
+                    user.set_access_based_on_domain()
 
                     # Save to database
                     db.session.add(user)
@@ -537,11 +540,20 @@ def user_dashboard():
 
     # Get personalized course recommendations based on user interests
     recommended_courses = get_recommended_courses(current_user)
+    
+    # Create access level information for template
+    access_info = {
+        'level': current_user.access_level,
+        'can_view_videos': current_user.can_view_videos(),
+        'can_view_text': current_user.can_view_text(),
+        'domain': current_user.email_domain
+    }
 
     return render_template('user/dashboard.html',
                            title='Dashboard',
                            courses=courses,
-                           recommended_courses=recommended_courses)
+                           recommended_courses=recommended_courses,
+                           access_info=access_info)
 
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -623,6 +635,9 @@ def view_lesson(lesson_id):
         flash("You don't have access to this lesson.", 'danger')
         return redirect(url_for('user_dashboard'))
 
+    # Check what content the user can view based on their access level
+    content_access = lesson.can_view_content(current_user)
+    
     # Get next and previous lessons
     next_lesson = Lesson.query.filter(Lesson.course_id == course.id,
                                       Lesson.order > lesson.order).order_by(
@@ -632,12 +647,22 @@ def view_lesson(lesson_id):
                                       Lesson.order < lesson.order).order_by(
                                           Lesson.order.desc()).first()
 
+    # Create access level information for template
+    access_info = {
+        'level': current_user.access_level,
+        'can_view_videos': current_user.can_view_videos(),
+        'can_view_text': current_user.can_view_text(),
+        'domain': current_user.email_domain
+    }
+
     return render_template('user/lesson.html',
                            title=lesson.title,
                            lesson=lesson,
                            course=course,
                            next_lesson=next_lesson,
-                           prev_lesson=prev_lesson)
+                           prev_lesson=prev_lesson,
+                           content_access=content_access,
+                           access_info=access_info)
 
 
 @app.route('/interests', methods=['GET', 'POST'])

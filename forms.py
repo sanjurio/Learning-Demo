@@ -76,6 +76,12 @@ class CourseForm(FlaskForm):
 class LessonForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=200)])
     content = TextAreaField('Content', validators=[DataRequired()])
+    content_type = SelectField('Content Type', choices=[
+        ('text', 'Text Only'),
+        ('video', 'Video Only'),
+        ('mixed', 'Text and Video')
+    ], default='text')
+    video_url = StringField('Video URL', validators=[Length(max=500)])
     order = IntegerField('Order', default=0)
     submit = SubmitField('Save Lesson')
 
