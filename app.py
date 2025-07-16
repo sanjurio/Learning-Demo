@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -21,12 +22,13 @@ db = SQLAlchemy(model_class=Base)
 
 # Create the Flask app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-key-replace-in-production")
+app.secret_key = os.environ.get("SESSION_SECRET")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # needed for url_for to generate with https
 
 # Configure the database
 database_url = os.environ.get("DATABASE_URL")
-# Use SQLite locally if no DATABASE_URL environment variable is set or if there are connection issues
-if not database_url or "ep-summer-wildflower" in database_url:  # Check for the problematic Neon DB
+# Use SQLite locally if no DATABASE_URL environment variable is set
+if not database_url:
     database_url = "sqlite:///app.db"
     logger.debug("Using local SQLite database")
 
@@ -56,13 +58,24 @@ csrf.init_app(app)
 
 with app.app_context():
     # Import models after app is created to avoid circular imports
-    from models import User, Course, Lesson, Interest, UserInterest, CourseInterest, UserCourse
+    import models  # noqa: F401
     
     # Create all database tables
     db.create_all()
     logger.debug("Database tables created")
     
-    
+    # Download NLTK data required for document analysis
+    try:
+        logger.info("Downloading NLTK data for document analysis...")
+        import nltk
+        for resource in ['punkt', 'stopwords', 'wordnet']:
+            try:
+                nltk.download(resource, quiet=True)
+                logger.info(f"Downloaded NLTK resource: {resource}")
+            except Exception as e:
+                logger.warning(f"Error downloading NLTK resource {resource}: {e}")
+    except Exception as e:
+        logger.error(f"Error setting up NLTK: {e}")
     
     # Import routes after database is set up
     import routes  # Import routes at the end to avoid circular imports
