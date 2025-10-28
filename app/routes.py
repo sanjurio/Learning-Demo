@@ -606,12 +606,14 @@ def register_routes(app):
         user = User.query.get_or_404(user_id)
         interests = Interest.query.all()
         user_interests_status = get_user_interests_status(user_id)
+        form = UserInterestAccessForm()
 
         return render_template('admin/user_interests.html',
                                title=f'Manage Interests for {user.username}',
                                user=user,
                                interests=interests,
-                               user_interests=user_interests_status)
+                               interest_status=user_interests_status,
+                               form=form)
 
     @app.route('/admin/user-interest/update', methods=['POST'])
     @login_required
