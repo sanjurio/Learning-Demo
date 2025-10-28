@@ -92,20 +92,20 @@
                                 <td>
                                     {% if has_access %}
                                     <form method="post" action="{{ url_for('admin_update_user_interest') }}" style="display: inline;">
-                                        {{ form.hidden_tag() }}
-                                        {{ form.user_id(value=user.id) }}
-                                        {{ form.interest_id(value=interest.id) }}
-                                        {{ form.action(value='revoke') }}
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <input type="hidden" name="user_id" value="{{ user.id }}"/>
+                                        <input type="hidden" name="interest_id" value="{{ interest.id }}"/>
+                                        <input type="hidden" name="action" value="revoke"/>
                                         <button type="submit" class="btn btn-danger btn-sm">
                                             Revoke Access
                                         </button>
                                     </form>
                                     {% else %}
                                     <form method="post" action="{{ url_for('admin_update_user_interest') }}" style="display: inline;">
-                                        {{ form.hidden_tag() }}
-                                        {{ form.user_id(value=user.id) }}
-                                        {{ form.interest_id(value=interest.id) }}
-                                        {{ form.action(value='grant') }}
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <input type="hidden" name="user_id" value="{{ user.id }}"/>
+                                        <input type="hidden" name="interest_id" value="{{ interest.id }}"/>
+                                        <input type="hidden" name="action" value="grant"/>
                                         <button type="submit" class="btn btn-success btn-sm">
                                             Grant Access
                                         </button>
