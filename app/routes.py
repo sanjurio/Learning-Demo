@@ -621,13 +621,17 @@ def register_routes(app):
         if not current_user.is_admin:
             abort(403)
 
-        user_id = request.form.get('user_id')
+        user_id_str = request.form.get('user_id')
         interest_id = request.form.get('interest_id')
         action = request.form.get('action')
 
-        if user_id and interest_id and action:
+        # Store user_id for redirect
+        redirect_user_id = None
+
+        if user_id_str and interest_id and action:
             try:
-                user_id = int(user_id)
+                user_id = int(user_id_str)
+                redirect_user_id = user_id
                 interest_id = int(interest_id)
 
                 if action == 'grant':
@@ -644,10 +648,18 @@ def register_routes(app):
                     flash('Invalid action specified.', 'danger')
             except ValueError:
                 flash('Invalid user or interest ID.', 'danger')
+                try:
+                    redirect_user_id = int(user_id_str)
+                except:
+                    redirect_user_id = None
         else:
             flash('Missing required form data.', 'danger')
 
-        return redirect(url_for('admin_user_interests', user_id=user_id))
+        # If we have a valid user_id, redirect to their interests page, otherwise to users list
+        if redirect_user_id:
+            return redirect(url_for('admin_user_interests', user_id=redirect_user_id))
+        else:
+            return redirect(url_for('admin_users'))
 
     # Admin course management routes
     @app.route('/admin/courses/add', methods=['GET', 'POST'])
