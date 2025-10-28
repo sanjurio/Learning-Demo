@@ -67,20 +67,26 @@ def user_can_access_course(user, course):
     return any(interest_id in course_interest_ids for interest_id in interest_ids)
 
 def get_user_interests_status(user_id):
-    """Get user interests with their access status"""
+    """Get ALL interests with their access status for a specific user"""
     from .. import db
     from ..models import UserInterest, Interest
     
-    user_interests = db.session.query(UserInterest, Interest).join(
-        Interest, UserInterest.interest_id == Interest.id
-    ).filter(UserInterest.user_id == user_id).all()
+    # Get all interests
+    all_interests = Interest.query.all()
+    
+    # Get user's interest records
+    user_interests = UserInterest.query.filter_by(user_id=user_id).all()
+    
+    # Create a map of interest_id to UserInterest for quick lookup
+    user_interest_map = {ui.interest_id: ui for ui in user_interests}
     
     result = []
-    for ui, interest in user_interests:
+    for interest in all_interests:
+        user_interest = user_interest_map.get(interest.id)
         result.append({
             'interest': interest,
-            'access_granted': ui.access_granted,
-            'selected': True
+            'access_granted': user_interest.access_granted if user_interest else False,
+            'selected': user_interest is not None
         })
     
     return result

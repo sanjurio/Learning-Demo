@@ -39,34 +39,54 @@ def grant_interest_access(user_id, interest_id):
     """Grant a user access to content related to an interest"""
     from flask_login import current_user
     from datetime import datetime
-
-    user_interest = UserInterest.query.filter_by(
-        user_id=user_id,
-        interest_id=interest_id
-    ).first()
-
-    if not user_interest:
-        user_interest = UserInterest(
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        user_interest = UserInterest.query.filter_by(
             user_id=user_id,
             interest_id=interest_id
-        )
-        db.session.add(user_interest)
+        ).first()
 
-    user_interest.access_granted = True
-    user_interest.granted_at = datetime.utcnow()
-    user_interest.granted_by = current_user.id
-    db.session.commit()
-    return True
+        if not user_interest:
+            user_interest = UserInterest(
+                user_id=user_id,
+                interest_id=interest_id
+            )
+            db.session.add(user_interest)
+
+        user_interest.access_granted = True
+        user_interest.granted_at = datetime.utcnow()
+        user_interest.granted_by = current_user.id
+        
+        db.session.commit()
+        logger.info(f"Granted interest {interest_id} access to user {user_id}")
+        return True
+    except Exception as e:
+        logger.error(f"Error granting interest access: {str(e)}")
+        db.session.rollback()
+        return False
 
 def revoke_interest_access(user_id, interest_id):
     """Revoke user access to an interest"""
-    user_interest = UserInterest.query.filter_by(
-        user_id=user_id, 
-        interest_id=interest_id
-    ).first()
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        user_interest = UserInterest.query.filter_by(
+            user_id=user_id, 
+            interest_id=interest_id
+        ).first()
 
-    if user_interest:
-        user_interest.access_granted = False
-        db.session.commit()
-        return True
-    return False
+        if user_interest:
+            user_interest.access_granted = False
+            db.session.commit()
+            logger.info(f"Revoked interest {interest_id} access from user {user_id}")
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"Error revoking interest access: {str(e)}")
+        db.session.rollback()
+        return False
