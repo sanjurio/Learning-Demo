@@ -657,6 +657,10 @@ def register_routes(app):
             flash('Course created successfully!', 'success')
             return redirect(url_for('admin_courses'))
 
+        # Initialize interests data to empty list for new courses
+        if form.interests.data is None:
+            form.interests.data = []
+
         return render_template('admin/edit_course.html', title='Add Course', form=form)
 
     @app.route('/admin/courses/<int:course_id>/edit', methods=['GET', 'POST'])
