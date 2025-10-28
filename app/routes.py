@@ -249,6 +249,30 @@ def register_routes(app):
                                users=users,
                                **stats)
 
+    @app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+    @login_required
+    def admin_delete_user(user_id):
+        if not current_user.is_admin:
+            abort(403)
+
+        user = User.query.get_or_404(user_id)
+        
+        # Prevent admin from deleting themselves
+        if user.id == current_user.id:
+            flash('You cannot delete your own account.', 'danger')
+            return redirect(url_for('admin_users'))
+        
+        # Prevent deleting other admin users
+        if user.is_admin:
+            flash('You cannot delete admin users.', 'danger')
+            return redirect(url_for('admin_users'))
+        
+        username = user.username
+        db.session.delete(user)
+        db.session.commit()
+        flash(f'User "{username}" has been deleted successfully.', 'success')
+        return redirect(url_for('admin_users'))
+
     @app.route('/admin/interests')
     @login_required
     def admin_interests():
