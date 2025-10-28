@@ -607,6 +607,12 @@ def register_routes(app):
         interests = Interest.query.all()
         user_interests_status = get_user_interests_status(user_id)
         form = UserInterestAccessForm()
+        
+        # Debug logging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"User {user_id} interests page - Found {len(interests)} total interests")
+        logger.info(f"Interest status data: {[(s['interest'].id, s['interest'].name, s['access_granted']) for s in user_interests_status]}")
 
         return render_template('admin/user_interests.html',
                                title=f'Manage Interests for {user.username}',
