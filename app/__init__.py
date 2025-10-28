@@ -33,10 +33,11 @@ def create_app():
 
     # Configure the database
     database_url = app.config['DATABASE_URL']
-    if not database_url:
-        database_url = "sqlite:///lms.db"
-        logger.debug("Using local SQLite database")
-
+    if 'sqlite' in database_url.lower():
+        logger.info("Using SQLite database for local development")
+    else:
+        logger.info(f"Using database: {database_url.split('@')[0].split('://')[0]}://...")
+    
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 
     # Initialize extensions
@@ -53,7 +54,7 @@ def create_app():
         # Import models to create tables
         from . import models
         db.create_all()
-        logger.debug("Database tables created")
+        logger.info("Database tables created successfully")
         
         # Download NLTK data for document analysis
         try:
